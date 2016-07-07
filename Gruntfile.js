@@ -1,25 +1,4 @@
 module.exports = function(grunt) {
-    grunt.initConfig({
-        pkg: grunt.file.readJSON('package.json'),
-
-        nittro: {
-            options: {
-            },
-            full: {
-                options: {
-                    extras: [
-                        'dialogs',
-                        'confirm',
-                        'dropzone',
-                        'paginator'
-                    ]
-                },
-                files: {
-                    'dist/nittro-full.js': []
-                }
-            }
-        }
-    });
 
     grunt.initConfig({
         pkg: grunt.file.readJSON('package.json'),
