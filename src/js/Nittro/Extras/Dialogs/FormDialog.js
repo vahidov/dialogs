@@ -1,4 +1,4 @@
-_context.invoke('Nittro.Widgets', function(Dialog, Form, DOM, Arrays) {
+_context.invoke('Nittro.Extras.Dialogs', function(Dialog, DOM, Arrays) {
 
     var FormDialog = _context.extend(Dialog, function(formLocator, options) {
         FormDialog.Super.call(this, options);
@@ -92,7 +92,6 @@ _context.invoke('Nittro.Widgets', function(Dialog, Form, DOM, Arrays) {
     _context.register(FormDialog, 'FormDialog');
 
 }, {
-    Form: 'Nittro.Forms.Form',
     DOM: 'Utils.DOM',
     Arrays: 'Utils.Arrays'
 });
