@@ -1,10 +1,6 @@
 module.exports = function(grunt) {
 
-    var files = [
-        'src/js/Nittro/Extras/Dialogs/Dialog.js',
-        'src/js/Nittro/Extras/Dialogs/FormDialog.js',
-        'src/js/Nittro/Extras/Dialogs/Bridges/DialogsDI.js'
-    ];
+    var files = grunt.file.readJSON('nittro.json').files;
 
     grunt.initConfig({
         pkg: grunt.file.readJSON('package.json'),
@@ -16,7 +12,7 @@ module.exports = function(grunt) {
             },
             dialogs: {
                 files: {
-                    'dist/js/nittro-extras-dialogs.min.js': files
+                    'dist/js/nittro-extras-dialogs.min.js': files.js
                 }
             }
         },
@@ -27,7 +23,7 @@ module.exports = function(grunt) {
             },
             dialogs: {
                 files: {
-                    'dist/js/nittro-extras-dialogs.js': files
+                    'dist/js/nittro-extras-dialogs.js': files.js
                 }
             }
         },
@@ -38,9 +34,7 @@ module.exports = function(grunt) {
                     compress: true
                 },
                 files: {
-                    'dist/css/nittro-extras-dialogs.min.css': [
-                        'src/css/dialogs.less'
-                    ]
+                    'dist/css/nittro-extras-dialogs.min.css': files.css
                 }
             },
             full: {
@@ -48,9 +42,7 @@ module.exports = function(grunt) {
                     compress: false
                 },
                 files: {
-                    'dist/css/nittro-extras-dialogs.css': [
-                        'src/css/dialogs.less'
-                    ]
+                    'dist/css/nittro-extras-dialogs.css': files.css
                 }
             }
         }

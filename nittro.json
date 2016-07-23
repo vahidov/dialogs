@@ -1,0 +1,17 @@
+{
+    "files": {
+        "js": [
+            "src/js/Nittro/Extras/Dialogs/Dialog.js",
+            "src/js/Nittro/Extras/Dialogs/FormDialog.js",
+            "src/js/Nittro/Extras/Dialogs/Bridges/DialogsDI.js"
+        ],
+        "css": [
+            "src/css/dialogs.less"
+        ]
+    },
+    "compat": {
+        "es5": true,
+        "flex": true,
+        "transitions": true
+    }
+}
