@@ -9,6 +9,7 @@
             "src/css/dialogs.less"
         ]
     },
+    "di": "Nittro.Extras.Dialogs.Bridges.DialogsDI()",
     "compat": {
         "es5": true,
         "flex": true,
