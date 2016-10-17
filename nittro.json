@@ -2,14 +2,22 @@
     "files": {
         "js": [
             "src/js/Nittro/Extras/Dialogs/Dialog.js",
-            "src/js/Nittro/Extras/Dialogs/FormDialog.js",
-            "src/js/Nittro/Extras/Dialogs/Bridges/DialogsDI.js"
+            "src/js/Nittro/Extras/Dialogs/FormDialog.js"
         ],
         "css": [
             "src/css/dialogs.less"
         ]
     },
-    "di": "Nittro.Extras.Dialogs.Bridges.DialogsDI()",
+    "bridges": {
+        "nittro-di": {
+            "files": [
+                "src/js/Nittro/Extras/Dialogs/Bridges/DialogsDI/DialogsExtension.js"
+            ],
+            "extensions": {
+                "dialogs": "Nittro.Extras.Dialogs.Bridges.DialogsDI.DialogsExtension()"
+            }
+        }
+    },
     "compat": {
         "es5": true,
         "flex": true,
