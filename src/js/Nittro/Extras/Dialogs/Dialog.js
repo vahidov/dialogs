@@ -7,6 +7,14 @@ _context.invoke('Nittro.Extras.Dialogs', function(DOM, Arrays) {
         this._.visible = false;
         this._.scrollPosition = null;
 
+        if (typeof this._.options.layer === 'string') {
+            this._.options.layer = DOM.getById(this._.options.layer);
+
+        } else if (!this._.options.layer) {
+            this._.options.layer = document.body;
+
+        }
+
         this._.elms = {
             holder : DOM.createFromHtml(this._.options.templates.holder),
             wrapper : DOM.createFromHtml(this._.options.templates.wrapper),
