@@ -73,7 +73,9 @@ _context.invoke('Nittro.Extras.Dialogs.Bridges.DialogsPage', function (Dialog, F
             dialog = form ? new FormDialog(options, this._.formLocator) : new Dialog(options);
             dialog.show();
 
-            dialog.one('hide', dialog.destroy.bind(dialog));
+            dialog.one('hide', function () {
+                window.setTimeout(dialog.destroy.bind(dialog), 1000);
+            });
 
         }
     });
