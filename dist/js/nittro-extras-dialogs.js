@@ -100,12 +100,10 @@ _context.invoke('Nittro.Extras.Dialogs', function(DOM, Arrays) {
                 layer: null
             },
             getDefaults: function (type) {
-                var defaults = type.defaults || {},
+                var defaults = {},
                     k;
 
                 do {
-                    type = type.Super;
-
                     if (type.defaults) {
                         for (k in type.defaults) {
                             if (type.defaults.hasOwnProperty(k) && !defaults.hasOwnProperty(k)) {
@@ -114,6 +112,9 @@ _context.invoke('Nittro.Extras.Dialogs', function(DOM, Arrays) {
                             }
                         }
                     }
+
+                    type = type.Super;
+
                 } while (type && type !== Dialog);
 
                 return defaults;
