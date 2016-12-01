@@ -7,31 +7,61 @@ _context.invoke('Nittro.Extras.Dialogs', function(DOM, Arrays) {
         this._.visible = false;
         this._.scrollPosition = null;
 
+        if (typeof this._.options.layer === 'string') {
+            this._.options.layer = DOM.getById(this._.options.layer);
+
+        } else if (!this._.options.layer) {
+            this._.options.layer = document.body;
+
+        }
+
         this._.elms = {
             holder : DOM.createFromHtml(this._.options.templates.holder),
             wrapper : DOM.createFromHtml(this._.options.templates.wrapper),
-            content : DOM.createFromHtml(this._.options.templates.content),
-            buttons : DOM.createFromHtml(this._.options.templates.buttons)
+            content : null,
+            buttons : null
         };
 
         this._.elms.holder.appendChild(this._.elms.wrapper);
-        this._.elms.wrapper.appendChild(this._.elms.content);
 
         if (this._.options.classes) {
             DOM.addClass(this._.elms.holder, this._.options.classes);
 
         }
 
-        if (this._.options.text) {
-            this._.options.html = '<p>' + this._.options.text + '</p>';
+        if (this._.options.content) {
+            this._.elms.content = this._.options.content;
+            DOM.toggleClass(this._.elms.content, 'nittro-dialog-content', true);
+            this._.options.content = null;
+
+        } else if (this._.options.text) {
+            this._.elms.content = DOM.createFromHtml(this._.options.templates.content);
+
+            var content = DOM.create('p');
+            content.textContent = this._.options.text;
+            this._.elms.content.appendChild(content);
+
+        } else if (this._.options.html) {
+            this._.elms.content = DOM.createFromHtml(this._.options.templates.content);
+            DOM.html(this._.elms.content, this._.options.html);
 
         }
 
-        DOM.html(this._.elms.content, this._.options.html);
+        if (this._.elms.content) {
+            this._.elms.wrapper.appendChild(this._.elms.content);
+        }
 
         if (this._.options.buttons) {
+            if (this._.options.buttons instanceof HTMLElement) {
+                this._.elms.buttons = this._.options.buttons;
+                DOM.toggleClass(this._.elms.buttons, 'nittro-dialog-buttons', true);
+                this._.options.buttons = null;
+            } else {
+                this._.elms.buttons = DOM.createFromHtml(this._.options.templates.buttons);
+                this._createButtons();
+            }
+
             this._.elms.wrapper.appendChild(this._.elms.buttons);
-            this._createButtons();
             DOM.addListener(this._.elms.buttons, 'click', this._handleButtons.bind(this));
 
         }
@@ -55,6 +85,7 @@ _context.invoke('Nittro.Extras.Dialogs', function(DOM, Arrays) {
         STATIC: {
             defaults: {
                 classes: null,
+                content: null,
                 html: null,
                 text: null,
                 buttons: null,
@@ -157,6 +188,11 @@ _context.invoke('Nittro.Extras.Dialogs', function(DOM, Arrays) {
 
         },
 
+        getElement: function () {
+            return this._.elms.holder;
+
+        },
+
         getContent: function() {
             return this._.elms.content;
 
@@ -214,11 +250,15 @@ _context.invoke('Nittro.Extras.Dialogs', function(DOM, Arrays) {
         },
 
         _handleButtons: function (evt) {
-            evt.preventDefault();
+            var value = DOM.getData(evt.target, 'value');
 
-            this.trigger('button', {
-                value: DOM.getData(evt.target, 'value')
-            });
+            if (value) {
+                evt.preventDefault();
+
+                this.trigger('button', {
+                    value: value
+                });
+            }
         },
 
         _prepareKeymap: function () {
@@ -277,7 +317,7 @@ _context.invoke('Nittro.Extras.Dialogs', function(DOM, Arrays) {
 ;
 _context.invoke('Nittro.Extras.Dialogs', function(Dialog, DOM, Arrays) {
 
-    var FormDialog = _context.extend(Dialog, function(formLocator, options) {
+    var FormDialog = _context.extend(Dialog, function(options, formLocator) {
         FormDialog.Super.call(this, options);
 
         this._.elms.form = this.getContent().getElementsByTagName('form').item(0);

@@ -20,7 +20,9 @@
         "nittro-core": "master"
     },
     "devDependencies": {
-        "nittro-forms": "master"
+        "nittro-forms": "master",
+        "nittro-page": "master",
+        "nittro-di": "master"
     },
     "ignore": [
         "**/.*",

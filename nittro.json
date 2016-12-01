@@ -9,6 +9,11 @@
         ]
     },
     "bridges": {
+        "nittro-page": {
+            "files": [
+                "src/js/Nittro/Extras/Dialogs/Bridges/DialogsPage/DialogAgent.js"
+            ]
+        },
         "nittro-di": {
             "files": [
                 "src/js/Nittro/Extras/Dialogs/Bridges/DialogsDI/DialogsExtension.js"

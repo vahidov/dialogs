@@ -1,6 +1,6 @@
 _context.invoke('Nittro.Extras.Dialogs', function(Dialog, DOM, Arrays) {
 
-    var FormDialog = _context.extend(Dialog, function(formLocator, options) {
+    var FormDialog = _context.extend(Dialog, function(options, formLocator) {
         FormDialog.Super.call(this, options);
 
         this._.elms.form = this.getContent().getElementsByTagName('form').item(0);
