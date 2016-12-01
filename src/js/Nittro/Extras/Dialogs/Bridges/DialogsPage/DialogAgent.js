@@ -81,5 +81,7 @@ _context.invoke('Nittro.Extras.Dialogs.Bridges.DialogsPage', function (Dialog, F
     _context.register(DialogAgent, 'DialogAgent');
 
 }, {
-    DOM: 'Utils.DOM'
+    DOM: 'Utils.DOM',
+    Dialog: 'Nittro.Extras.Dialogs.Dialog',
+    FormDialog: 'Nittro.Extras.Dialogs.FormDialog'
 });
