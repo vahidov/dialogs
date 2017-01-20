@@ -115,7 +115,7 @@ _context.invoke('Nittro.Extras.Dialogs', function(DOM, Arrays) {
 
                     type = type.Super;
 
-                } while (type && type !== Dialog);
+                } while (type && type !== Dialog.Super);
 
                 return defaults;
 
