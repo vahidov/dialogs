@@ -402,7 +402,7 @@ _context.invoke('Nittro.Extras.Dialogs', function (Dialog, FormDialog, DOM) {
         };
 
         this._handleShow = this._handleShow.bind(this);
-        this._handleHidden = this._handleHidden.bind(this);
+        this._handleHide = this._handleHide.bind(this);
         this._handleDestroy = this._handleDestroy.bind(this);
 
     }, {
@@ -442,7 +442,7 @@ _context.invoke('Nittro.Extras.Dialogs', function (Dialog, FormDialog, DOM) {
 
         _setup: function (dialog) {
             dialog.on('show', this._handleShow);
-            dialog.on('hide', this._handleHidden);
+            dialog.on('hide', this._handleHide);
             dialog.on('destroy', this._handleDestroy);
             document.body.appendChild(dialog.getElement());
         },
@@ -461,7 +461,7 @@ _context.invoke('Nittro.Extras.Dialogs', function (Dialog, FormDialog, DOM) {
             }
         },
 
-        _handleHidden: function (evt) {
+        _handleHide: function (evt) {
             DOM.toggleClass(evt.target.getElement(), 'topmost', false);
 
             var index = this._.stack.indexOf(evt.target);
