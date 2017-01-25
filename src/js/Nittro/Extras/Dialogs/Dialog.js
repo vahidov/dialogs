@@ -55,9 +55,10 @@ _context.invoke('Nittro.Extras.Dialogs', function(DOM, CSSTransitions, Arrays, R
             }
 
             this._.elms.wrapper.appendChild(this._.elms.buttons);
-            DOM.addListener(this._.elms.buttons, 'click', this._handleButtons.bind(this));
 
         }
+
+        DOM.addListener(this._.elms.wrapper, 'click', this._handleButton.bind(this));
 
         if (this._.options.keyMap) {
             try {
@@ -142,7 +143,6 @@ _context.invoke('Nittro.Extras.Dialogs', function(DOM, CSSTransitions, Arrays, R
             }
 
             this._.visible = true;
-            this.trigger('show');
 
             this._.scrollLock = {
                 left: window.pageXOffset,
@@ -159,6 +159,8 @@ _context.invoke('Nittro.Extras.Dialogs', function(DOM, CSSTransitions, Arrays, R
 
             DOM.addListener(window, 'scroll', this._handleScroll);
             DOM.addClass(this._.elms.holder, 'visible');
+
+            this.trigger('show');
 
             return CSSTransitions.run(this._.elms.holder)
                 .then(function () {
@@ -254,7 +256,7 @@ _context.invoke('Nittro.Extras.Dialogs', function(DOM, CSSTransitions, Arrays, R
             }
         },
 
-        _handleButtons: function (evt) {
+        _handleButton: function (evt) {
             var value = DOM.getData(evt.target, 'value');
 
             if (value) {
