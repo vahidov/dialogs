@@ -44,7 +44,7 @@ _context.invoke('Nittro.Extras.Dialogs', function (Dialog, FormDialog, DOM) {
         },
 
         getTopmostOpenDialog: function () {
-            return this._.stack.length ? this._.stack[this._.stack.length - 1] : null;
+            return this._.stack.length ? this._.stack[0] : null;
         },
 
         _setup: function (dialog) {
@@ -56,12 +56,12 @@ _context.invoke('Nittro.Extras.Dialogs', function (Dialog, FormDialog, DOM) {
 
         _handleShow: function (evt) {
             if (this._.stack.length) {
-                DOM.toggleClass(this._.stack[this._.stack.length - 1].getElement(), 'topmost', false);
+                DOM.toggleClass(this._.stack[0].getElement(), 'topmost', false);
             }
 
             DOM.toggleClass(evt.target.getElement(), 'topmost', true);
             evt.target.getElement().style.zIndex = this._.zIndex + this._.stack.length;
-            this._.stack.push(evt.target);
+            this._.stack.unshift(evt.target);
 
             if (this._.keymapManager && evt.target.getKeyMap()) {
                 this._.keymapManager.push(evt.target.getKeyMap());
@@ -75,6 +75,10 @@ _context.invoke('Nittro.Extras.Dialogs', function (Dialog, FormDialog, DOM) {
 
             if (index > -1) {
                 this._.stack.splice(index, 1);
+            }
+
+            if (this._.stack.length) {
+                DOM.toggleClass(this._.stack[0].getElement(), 'topmost', true);
             }
 
             if (this._.keymapManager && evt.target.getKeyMap()) {
