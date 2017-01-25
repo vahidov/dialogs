@@ -1,38 +1,37 @@
 _context.invoke('Nittro.Extras.Dialogs', function(Dialog, DOM, Arrays) {
 
-    var FormDialog = _context.extend(Dialog, function(options, formLocator) {
+    var FormDialog = _context.extend(Dialog, function(options, form) {
         FormDialog.Super.call(this, options);
 
-        this._.elms.form = this.getContent().getElementsByTagName('form').item(0);
-        this._.formLocator = formLocator;
-        this._.form = formLocator.getForm(this._.elms.form);
-
-        DOM.addListener(this._.elms.form, 'submit', this._handleSubmit.bind(this));
         this.on('button', this._handleButton.bind(this));
 
         if (this._.options.autoFocus) {
             this.on('show', this._autoFocus.bind(this));
 
         }
+
+        if (form) {
+            this.setForm(form);
+        }
     }, {
         STATIC: {
             defaults: {
                 classes: 'nittro-dialog-form',
                 hideOnSuccess: true,
-                autoFocus: true,
-                buttons: {
-                    confirm: 'OK',
-                    cancel: {label: 'Cancel', type: 'text'}
-                },
-                keyMap: {
-                    confirm: 13,
-                    cancel: 27
-                }
+                autoFocus: true
             },
             setDefaults: function(defaults) {
                 Arrays.mergeTree(FormDialog.defaults, defaults);
 
             }
+        },
+
+        setForm: function (form) {
+            this._.form = form;
+            this._.elms.form = form.getElement();
+            DOM.addListener(this._.elms.form, 'submit', this._handleSubmit.bind(this));
+
+            return this;
         },
 
         setValues: function(values) {
@@ -80,12 +79,6 @@ _context.invoke('Nittro.Extras.Dialogs', function(Dialog, DOM, Arrays) {
                 this._.form.getElements().item(0).focus();
 
             } catch (e) { /* noop */ }
-        },
-
-        destroy: function () {
-            this._.formLocator.removeForm(this._.elms.form);
-            FormDialog.Super.prototype.destroy.call(this);
-
         }
     });
 

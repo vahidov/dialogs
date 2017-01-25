@@ -1,14 +1,10 @@
-_context.invoke('Nittro.Extras.Dialogs.Bridges.DialogsPage', function (Dialog, FormDialog, DOM) {
+_context.invoke('Nittro.Extras.Dialogs.Bridges.DialogsPage', function (DOM) {
 
-    var DialogAgent = _context.extend('Nittro.Object', function () {
+    var DialogAgent = _context.extend('Nittro.Object', function (dialogManager) {
         DialogAgent.Super.call(this);
-        this._.formLocator = null;
+        this._.dialogManager = dialogManager;
 
     }, {
-        setFormLocator: function (formLocator) {
-            this._.formLocator = formLocator;
-        },
-
         init: function (transaction, context) {
             var element = context.element,
                 snippet,
@@ -16,14 +12,16 @@ _context.invoke('Nittro.Extras.Dialogs.Bridges.DialogsPage', function (Dialog, F
 
             if (element && (snippet = DOM.getData(element, 'dialog'))) {
                 data.snippet = snippet;
-                data.form = DOM.getData(element, 'form');
             }
 
             return data;
         },
 
         dispatch: function (transaction, data) {
+            if (this._.dialogManager.hasOpenDialog()) {
+                return this._.dialogManager.getTopmostOpenDialog().hide();
 
+            }
         },
 
         abort: function (transaction, data) {
@@ -58,32 +56,27 @@ _context.invoke('Nittro.Extras.Dialogs.Bridges.DialogsPage', function (Dialog, F
                 children = DOM.getChildren(content),
                 dialog;
 
-            if (children.length < 1 || children.length > 2) {
-                throw new Error('Invalid dialog content: must have 1 or 2 element child nodes');
-            }
+            options.content = DOM.create('div');
+            options.buttons = null;
 
-            options.content = children.shift();
+            DOM.append(options.content, children);
 
-            if (children.length) {
-                options.buttons = children.shift();
+            if (options.content.getElementsByTagName('form').length) {
+                dialog = this._.dialogManager.createFormDialog(options);
             } else {
-                options.buttons = null;
+                dialog = this._.dialogManager.createDialog(options);
             }
 
-            dialog = form ? new FormDialog(options, this._.formLocator) : new Dialog(options);
             dialog.show();
 
-            dialog.one('hide', function () {
+            dialog.one('hidden', function () {
                 window.setTimeout(dialog.destroy.bind(dialog), 1000);
             });
-
         }
     });
 
     _context.register(DialogAgent, 'DialogAgent');
 
 }, {
-    DOM: 'Utils.DOM',
-    Dialog: 'Nittro.Extras.Dialogs.Dialog',
-    FormDialog: 'Nittro.Extras.Dialogs.FormDialog'
+    DOM: 'Utils.DOM'
 });

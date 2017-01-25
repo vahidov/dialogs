@@ -1,4 +1,4 @@
-_context.invoke('Nittro.Extras.Dialogs', function(DOM, Arrays) {
+_context.invoke('Nittro.Extras.Dialogs', function(DOM, CSSTransitions, Arrays, ReflectionClass) {
 
     var Dialog = _context.extend('Nittro.Object', function(options) {
         Dialog.Super.call(this);
@@ -6,14 +6,7 @@ _context.invoke('Nittro.Extras.Dialogs', function(DOM, Arrays) {
         this._.options = Arrays.mergeTree({}, Dialog.getDefaults(this.constructor), options);
         this._.visible = false;
         this._.scrollPosition = null;
-
-        if (typeof this._.options.layer === 'string') {
-            this._.options.layer = DOM.getById(this._.options.layer);
-
-        } else if (!this._.options.layer) {
-            this._.options.layer = document.body;
-
-        }
+        this._.keyMap = null;
 
         this._.elms = {
             holder : DOM.createFromHtml(this._.options.templates.holder),
@@ -66,19 +59,29 @@ _context.invoke('Nittro.Extras.Dialogs', function(DOM, Arrays) {
 
         }
 
+        if (this._.options.keyMap) {
+            try {
+                var Keymap = ReflectionClass.from('Nittro.Extras.Keymap.Keymap');
+                this._.keyMap = new Keymap();
+            } catch (e) {}
+
+            if (this._.keyMap) {
+                this._handleKey = this._handleKey.bind(this);
+
+                for (var key in this._.options.keyMap) {
+                    if (this._.options.keyMap.hasOwnProperty(key)) {
+                        this._.keyMap.add(key, this._handleKey);
+                    }
+                }
+            }
+        }
+
         this.on('button:default', function() {
             this.hide();
 
         });
 
-        if (this._.options.keyMap) {
-            this._prepareKeymap();
-
-        }
-
         DOM.addListener(this._.elms.holder, 'touchmove', this._handleTouchScroll.bind(this));
-        this._.options.layer.appendChild(this._.elms.holder);
-        this._handleKey = this._handleKey.bind(this);
         this._handleScroll = this._handleScroll.bind(this);
 
     }, {
@@ -89,15 +92,16 @@ _context.invoke('Nittro.Extras.Dialogs', function(DOM, Arrays) {
                 html: null,
                 text: null,
                 buttons: null,
-                keyMap: {},
+                keyMap: {
+                    'Escape': 'cancel'
+                },
                 templates: {
                     holder : '<div class="nittro-dialog-holder"></div>',
                     wrapper : '<div class="nittro-dialog-inner"></div>',
                     content : '<div class="nittro-dialog-content"></div>',
                     buttons : '<div class="nittro-dialog-buttons"></div>',
                     button : '<button></button>'
-                },
-                layer: null
+                }
             },
             getDefaults: function (type) {
                 var defaults = {},
@@ -140,11 +144,6 @@ _context.invoke('Nittro.Extras.Dialogs', function(DOM, Arrays) {
             this._.visible = true;
             this.trigger('show');
 
-            if (this._.keyMap) {
-                DOM.addListener(document, 'keydown', this._handleKey);
-
-            }
-
             this._.scrollLock = {
                 left: window.pageXOffset,
                 top: window.pageYOffset
@@ -161,6 +160,11 @@ _context.invoke('Nittro.Extras.Dialogs', function(DOM, Arrays) {
             DOM.addListener(window, 'scroll', this._handleScroll);
             DOM.addClass(this._.elms.holder, 'visible');
 
+            return CSSTransitions.run(this._.elms.holder)
+                .then(function () {
+                    this.trigger('shown');
+                    return this;
+                }.bind(this));
         },
 
         hide: function() {
@@ -171,11 +175,6 @@ _context.invoke('Nittro.Extras.Dialogs', function(DOM, Arrays) {
 
             this._.visible = false;
 
-            if (this._.keyMap) {
-                DOM.removeListener(document, 'keydown', this._handleKey);
-
-            }
-
             DOM.removeListener(window, 'scroll', this._handleScroll);
 
             if (/ipod|ipad|iphone/i.test(navigator.userAgent)) {
@@ -184,9 +183,15 @@ _context.invoke('Nittro.Extras.Dialogs', function(DOM, Arrays) {
 
             }
 
-            DOM.removeClass(this._.elms.holder, 'visible');
             this.trigger('hide');
 
+            DOM.removeClass(this._.elms.holder, 'visible');
+
+            return CSSTransitions.run(this._.elms.holder)
+                .then(function () {
+                    this.trigger('hidden');
+                    return this;
+                }.bind(this));
         },
 
         getElement: function () {
@@ -204,29 +209,28 @@ _context.invoke('Nittro.Extras.Dialogs', function(DOM, Arrays) {
 
         },
 
-        destroy: function () {
-            if (this._.visible) {
-                window.setTimeout(function() {
-                    this.destroy();
-
-                }.bind(this), 1000);
-
-                this.hide();
-
-            } else {
-                this._.options.layer.removeChild(this._.elms.holder);
-                this.off();
-
-                window.setTimeout(function(k) {
-                    for (k in this._.elms) {
-                        this._.elms[k] = null;
-                    }
-                }.bind(this), 10);
-
-            }
+        getKeyMap: function () {
+            return this._.keyMap;
         },
 
+        destroy: function () {
+            if (this._.visible) {
+                this.hide().then(this.destroy.bind(this));
 
+            } else {
+                this.trigger('destroy');
+
+                if (this._.elms.holder.parentNode) {
+                    this._.elms.holder.parentNode.removeChild(this._.elms.holder);
+                }
+
+                this.off();
+
+                for (var k in this._.elms) {
+                    this._.elms[k] = null;
+                }
+            }
+        },
 
         _createButtons: function () {
             var value, btn, def;
@@ -262,37 +266,13 @@ _context.invoke('Nittro.Extras.Dialogs', function(DOM, Arrays) {
             }
         },
 
-        _prepareKeymap: function () {
-            var keyMap = {},
-                v, k;
-
-            for (v in this._.options.keyMap) {
-                k = this._.options.keyMap[v];
-
-                if (!(k instanceof Array)) {
-                    k = [k];
-
-                }
-
-                k.forEach(function (k) {
-                    keyMap[k] = v;
-
-                });
-            }
-
-            this._.keyMap = keyMap;
-
-        },
-
-        _handleKey: function(evt) {
-            if (evt.target.tagName.toLowerCase() === 'textarea') return;
-
-            if (evt.which in this._.keyMap) {
-                evt.preventDefault();
-
+        _handleKey: function (key, evt) {
+            if (!evt.target || !evt.target.tagName || !evt.target.tagName.match(/^(input|button|textarea|select)$/i)) {
                 this.trigger('button', {
-                    value: this._.keyMap[evt.which]
+                    value: this._.options.keyMap[key]
                 });
+            } else {
+                return false;
             }
         },
 
@@ -313,44 +293,45 @@ _context.invoke('Nittro.Extras.Dialogs', function(DOM, Arrays) {
 
 }, {
     DOM: 'Utils.DOM',
-    Arrays: 'Utils.Arrays'
+    CSSTransitions: 'Utils.CSSTransitions',
+    Arrays: 'Utils.Arrays',
+    ReflectionClass: 'Utils.ReflectionClass'
 });
 ;
 _context.invoke('Nittro.Extras.Dialogs', function(Dialog, DOM, Arrays) {
 
-    var FormDialog = _context.extend(Dialog, function(options, formLocator) {
+    var FormDialog = _context.extend(Dialog, function(options, form) {
         FormDialog.Super.call(this, options);
 
-        this._.elms.form = this.getContent().getElementsByTagName('form').item(0);
-        this._.formLocator = formLocator;
-        this._.form = formLocator.getForm(this._.elms.form);
-
-        DOM.addListener(this._.elms.form, 'submit', this._handleSubmit.bind(this));
         this.on('button', this._handleButton.bind(this));
 
         if (this._.options.autoFocus) {
             this.on('show', this._autoFocus.bind(this));
 
         }
+
+        if (form) {
+            this.setForm(form);
+        }
     }, {
         STATIC: {
             defaults: {
                 classes: 'nittro-dialog-form',
                 hideOnSuccess: true,
-                autoFocus: true,
-                buttons: {
-                    confirm: 'OK',
-                    cancel: {label: 'Cancel', type: 'text'}
-                },
-                keyMap: {
-                    confirm: 13,
-                    cancel: 27
-                }
+                autoFocus: true
             },
             setDefaults: function(defaults) {
                 Arrays.mergeTree(FormDialog.defaults, defaults);
 
             }
+        },
+
+        setForm: function (form) {
+            this._.form = form;
+            this._.elms.form = form.getElement();
+            DOM.addListener(this._.elms.form, 'submit', this._handleSubmit.bind(this));
+
+            return this;
         },
 
         setValues: function(values) {
@@ -398,12 +379,6 @@ _context.invoke('Nittro.Extras.Dialogs', function(Dialog, DOM, Arrays) {
                 this._.form.getElements().item(0).focus();
 
             } catch (e) { /* noop */ }
-        },
-
-        destroy: function () {
-            this._.formLocator.removeForm(this._.elms.form);
-            FormDialog.Super.prototype.destroy.call(this);
-
         }
     });
 
@@ -412,4 +387,101 @@ _context.invoke('Nittro.Extras.Dialogs', function(Dialog, DOM, Arrays) {
 }, {
     DOM: 'Utils.DOM',
     Arrays: 'Utils.Arrays'
+});
+;
+_context.invoke('Nittro.Extras.Dialogs', function (Dialog, FormDialog, DOM) {
+
+    var Manager = _context.extend(function() {
+        this._ = {
+            stack: [],
+            formLocator: null,
+            keymapManager: null,
+            zIndex: 1000
+        };
+
+        this._handleShow = this._handleShow.bind(this);
+        this._handleHidden = this._handleHidden.bind(this);
+        this._handleDestroy = this._handleDestroy.bind(this);
+
+    }, {
+        setFormLocator: function (formLocator) {
+            this._.formLocator = formLocator;
+            return this;
+        },
+
+        setKeymapManager: function (keymapManager) {
+            this._.keymapManager = keymapManager;
+            return this;
+        },
+
+        createDialog: function (options) {
+            var dlg = new Dialog(options);
+            this._setup(dlg);
+            return dlg;
+        },
+
+        createFormDialog: function (options) {
+            var dlg = new FormDialog(options);
+            this._setup(dlg);
+
+            var frm = dlg.getContent().getElementsByTagName('form').item(0);
+            dlg.setForm(this._.formLocator.getForm(frm));
+
+            return dlg;
+        },
+
+        hasOpenDialog: function () {
+            return this._.stack.length > 0;
+        },
+
+        getTopmostOpenDialog: function () {
+            return this._.stack.length ? this._.stack[this._.stack.length - 1] : null;
+        },
+
+        _setup: function (dialog) {
+            dialog.on('show', this._handleShow);
+            dialog.on('hide', this._handleHidden);
+            dialog.on('destroy', this._handleDestroy);
+            document.body.appendChild(dialog.getElement());
+        },
+
+        _handleShow: function (evt) {
+            if (this._.stack.length) {
+                DOM.toggleClass(this._.stack[this._.stack.length - 1].getElement(), 'topmost', false);
+            }
+
+            DOM.toggleClass(evt.target.getElement(), 'topmost', true);
+            evt.target.getElement().style.zIndex = this._.zIndex + this._.stack.length;
+            this._.stack.push(evt.target);
+
+            if (this._.keymapManager && evt.target.getKeyMap()) {
+                this._.keymapManager.push(evt.target.getKeyMap());
+            }
+        },
+
+        _handleHidden: function (evt) {
+            DOM.toggleClass(evt.target.getElement(), 'topmost', false);
+
+            var index = this._.stack.indexOf(evt.target);
+
+            if (index > -1) {
+                this._.stack.splice(index, 1);
+            }
+
+            if (this._.keymapManager && evt.target.getKeyMap()) {
+                this._.keymapManager.pop(evt.target.getKeyMap());
+            }
+        },
+
+        _handleDestroy: function (evt) {
+            if (evt.target instanceof FormDialog) {
+                this._.formLocator.removeForm(evt.target.getForm().getElement());
+            }
+        }
+    });
+
+    _context.register(Manager, 'Manager');
+
+}, {
+    DOM: 'Utils.DOM'
 });

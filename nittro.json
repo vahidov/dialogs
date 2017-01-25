@@ -2,7 +2,8 @@
     "files": {
         "js": [
             "src/js/Nittro/Extras/Dialogs/Dialog.js",
-            "src/js/Nittro/Extras/Dialogs/FormDialog.js"
+            "src/js/Nittro/Extras/Dialogs/FormDialog.js",
+            "src/js/Nittro/Extras/Dialogs/Manager.js"
         ],
         "css": [
             "src/css/dialogs.less"

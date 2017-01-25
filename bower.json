@@ -22,7 +22,8 @@
     "devDependencies": {
         "nittro-forms": "master",
         "nittro-page": "master",
-        "nittro-di": "master"
+        "nittro-di": "master",
+        "nittro-extras-keymap": "master"
     },
     "ignore": [
         "**/.*",
