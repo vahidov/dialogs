@@ -1,9 +1,9 @@
 {
     "files": {
         "js": [
-            "src/js/Nittro/Extras/Dialogs/Dialog.js",
-            "src/js/Nittro/Extras/Dialogs/FormDialog.js",
-            "src/js/Nittro/Extras/Dialogs/Manager.js"
+            "src/js/Dialog.js",
+            "src/js/FormDialog.js",
+            "src/js/Manager.js"
         ],
         "css": [
             "src/css/dialogs.less"
@@ -12,12 +12,12 @@
     "bridges": {
         "nittro-page": {
             "files": [
-                "src/js/Nittro/Extras/Dialogs/Bridges/DialogsPage/DialogAgent.js"
+                "src/js/Bridges/DialogsPage/DialogAgent.js"
             ]
         },
         "nittro-di": {
             "files": [
-                "src/js/Nittro/Extras/Dialogs/Bridges/DialogsDI/DialogsExtension.js"
+                "src/js/Bridges/DialogsDI/DialogsExtension.js"
             ],
             "extensions": {
                 "dialogs": "Nittro.Extras.Dialogs.Bridges.DialogsDI.DialogsExtension()"
