@@ -1,4 +1,4 @@
-_context.invoke('Nittro.Extras.Dialogs', function (Dialog, FormDialog, DOM) {
+_context.invoke('Nittro.Extras.Dialogs', function (Dialog, DOM) {
 
     var Manager = _context.extend('Nittro.Object', function() {
         Manager.Super.call(this);
