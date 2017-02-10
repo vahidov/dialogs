@@ -2,7 +2,6 @@
     "files": {
         "js": [
             "src/js/Dialog.js",
-            "src/js/FormDialog.js",
             "src/js/Manager.js"
         ],
         "css": [
@@ -13,6 +12,17 @@
         "nittro-page": {
             "files": [
                 "src/js/Bridges/DialogsPage/DialogAgent.js"
+            ]
+        },
+        "nittro-forms": {
+            "files": [
+                "src/js/FormDialog.js",
+                "src/js/Bridges/DialogsForms/FormDialogMixin.js"
+            ]
+        },
+        "nittro-extras-keymap": {
+            "files": [
+                "src/js/Bridges/DialogsKeymap/KeymapMixin.js"
             ]
         },
         "nittro-di": {
