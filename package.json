@@ -3,7 +3,7 @@
     "homepage": "https://www.nittro.org",
     "license": "MIT",
     "author": "Dan Kadera <me@subsonic.cz>",
-    "version": "2.0.0-rc.5",
+    "version": "2.0.0-rc.6",
     "repository": {
         "type": "git",
         "url": "https://github.com/nittro/dialogs.git"
@@ -19,6 +19,7 @@
         "nittro-di": "^2.0.0-rc.2",
         "nittro-page": "^2.0.0-rc.3",
         "nittro-forms": "^2.0.0-rc.2",
+        "nittro-extras-keymap": "^2.0.0-rc.4",
         "gulp": "^3.9.1",
         "gulp-add-src": "^0.2.0",
         "gulp-jasmine-browser": "^1.7.1",

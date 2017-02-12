@@ -46,12 +46,12 @@ _context.invoke('Nittro.Extras.Dialogs.Bridges.DialogsPage', function (DOM) {
                     }
                 }
 
-                this._openDialog(snippet.content, data.form);
+                this._openDialog(snippet.content);
 
             }
         },
 
-        _openDialog: function (content, form) {
+        _openDialog: function (content) {
             var options = {},
                 children = DOM.getChildren(content),
                 dialog;
@@ -68,10 +68,7 @@ _context.invoke('Nittro.Extras.Dialogs.Bridges.DialogsPage', function (DOM) {
             }
 
             dialog.show();
-
-            dialog.one('hidden', function () {
-                window.setTimeout(dialog.destroy.bind(dialog), 1000);
-            });
+            dialog.one('hidden', dialog.destroy.bind(dialog));
         }
     });
 

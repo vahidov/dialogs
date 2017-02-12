@@ -7,6 +7,7 @@ _context.invoke('Nittro.Extras.Dialogs', function(DOM, CSSTransitions, Arrays, R
         this._.visible = false;
         this._.scrollPosition = null;
         this._.keyMap = null;
+        this._.tabContext = null;
 
         this._.elms = {
             holder : DOM.createFromHtml(this._.options.templates.holder),
@@ -58,23 +59,27 @@ _context.invoke('Nittro.Extras.Dialogs', function(DOM, CSSTransitions, Arrays, R
 
         }
 
-        DOM.addListener(this._.elms.wrapper, 'click', this._handleButton.bind(this));
+        try {
+            var keymap = ReflectionClass.from('Nittro.Extras.Keymap.Keymap'),
+                tabContext = ReflectionClass.from('Nittro.Extras.Keymap.TabContext');
 
-        if (this._.options.keyMap) {
-            try {
-                var Keymap = ReflectionClass.from('Nittro.Extras.Keymap.Keymap');
-                this._.keyMap = new Keymap();
-            } catch (e) {}
+            this._.keyMap = keymap.newInstance();
+            this._.tabContext = tabContext.newInstance();
+        } catch (e) {}
 
-            if (this._.keyMap) {
-                this._handleKey = this._handleKey.bind(this);
 
-                for (var key in this._.options.keyMap) {
-                    if (this._.options.keyMap.hasOwnProperty(key)) {
-                        this._.keyMap.add(key, this._handleKey);
-                    }
+        if (this._.keyMap && this._.options.keyMap) {
+            this._handleKey = this._handleKey.bind(this);
+
+            for (var key in this._.options.keyMap) {
+                if (this._.options.keyMap.hasOwnProperty(key)) {
+                    this._.keyMap.add(key, this._handleKey);
                 }
             }
+        }
+
+        if (this._.tabContext && this._.elms.buttons) {
+            this._.tabContext.addFromContainer(this._.elms.buttons, true);
         }
 
         this.on('button:default', function() {
@@ -82,6 +87,7 @@ _context.invoke('Nittro.Extras.Dialogs', function(DOM, CSSTransitions, Arrays, R
 
         });
 
+        DOM.addListener(this._.elms.wrapper, 'click', this._handleButton.bind(this));
         DOM.addListener(this._.elms.holder, 'touchmove', this._handleTouchScroll.bind(this));
         this._handleScroll = this._handleScroll.bind(this);
 
@@ -215,6 +221,10 @@ _context.invoke('Nittro.Extras.Dialogs', function(DOM, CSSTransitions, Arrays, R
             return this._.keyMap;
         },
 
+        getTabContext: function () {
+            return this._.tabContext;
+        },
+
         destroy: function () {
             if (this._.visible) {
                 this.hide().then(this.destroy.bind(this));
@@ -235,35 +245,36 @@ _context.invoke('Nittro.Extras.Dialogs', function(DOM, CSSTransitions, Arrays, R
         },
 
         _createButtons: function () {
-            var value, btn, def;
+            var action, btn, def;
 
-            for (value in this._.options.buttons) {
-                btn = DOM.createFromHtml(this._.options.templates.button);
+            for (action in this._.options.buttons) {
+                if (this._.options.buttons.hasOwnProperty(action)) {
+                    btn = DOM.createFromHtml(this._.options.templates.button);
 
-                def = this._.options.buttons[value];
+                    def = this._.options.buttons[action];
 
-                if (typeof def === 'string') {
-                    def = { label: def, type: 'button' };
+                    if (typeof def === 'string') {
+                        def = {label: def, type: 'button'};
 
+                    }
+
+                    DOM.setData(btn, 'action', action);
+                    DOM.addClass(btn, 'nittro-dialog-button', def.type === 'text' ? 'nittro-dialog-button-text' : '');
+                    btn.textContent = def.label;
+
+                    this._.elms.buttons.appendChild(btn);
                 }
-
-                DOM.setData(btn, 'value', value);
-                DOM.addClass(btn, 'nittro-dialog-button', def.type === 'button' ? 'nittro-dialog-button-text' : 'nittro-dialog-button-plain');
-                btn.textContent = def.label;
-
-                this._.elms.buttons.appendChild(btn);
-
             }
         },
 
         _handleButton: function (evt) {
-            var value = DOM.getData(evt.target, 'value');
+            var action = DOM.getData(evt.target, 'action');
 
-            if (value) {
+            if (action) {
                 evt.preventDefault();
 
                 this.trigger('button', {
-                    value: value
+                    action: action
                 });
             }
         },
@@ -271,7 +282,7 @@ _context.invoke('Nittro.Extras.Dialogs', function(DOM, CSSTransitions, Arrays, R
         _handleKey: function (key, evt) {
             if (!evt.target || !evt.target.tagName || !evt.target.tagName.match(/^(input|button|textarea|select)$/i)) {
                 this.trigger('button', {
-                    value: this._.options.keyMap[key]
+                    action: this._.options.keyMap[key]
                 });
             } else {
                 return false;

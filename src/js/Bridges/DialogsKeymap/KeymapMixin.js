@@ -1,4 +1,4 @@
-_context.invoke(function (Manager) {
+_context.invoke('Nittro.Extras.Dialogs.Bridges.DialogsKeymap', function (Manager) {
 
     var KeymapMixin = {
         setKeymapManager: function (keymapManager) {
@@ -10,18 +10,16 @@ _context.invoke(function (Manager) {
         },
 
         _setupKeymap: function (evt) {
-            if (evt.data.dialog.getKeyMap()) {
-                evt.data.dialog.on('show', this._pushKeymap);
-                evt.data.dialog.on('hide', this._popKeymap);
-            }
+            evt.data.dialog.on('show', this._pushKeymap);
+            evt.data.dialog.on('hide', this._popKeymap);
         },
 
         _pushKeymap: function (evt) {
-            this._.keymapManager.push(evt.target.getKeyMap());
+            this._.keymapManager.push(evt.target.getKeyMap(), evt.target.getTabContext());
         },
 
         _popKeymap: function (evt) {
-            this._.keymapManager.pop(evt.target.getKeyMap());
+            this._.keymapManager.pop(evt.target.getKeyMap(), evt.target.getTabContext());
         }
     };
 

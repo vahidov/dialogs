@@ -1,4 +1,4 @@
-_context.invoke(function (Manager, FormDialog) {
+_context.invoke('Nittro.Extras.Dialogs.Bridges.DialogsForms', function (Manager, FormDialog) {
 
     var FormDialogMixin = {
         setFormLocator: function (formLocator) {

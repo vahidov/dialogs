@@ -19,6 +19,10 @@ _context.invoke('Nittro.Extras.Dialogs.Bridges.DialogsDI', function() {
                 builder.addFactory('formDialog', '@dialogManager::createFormDialog()');
             }
 
+            if (builder.hasServiceDefinition('keymapManager')) {
+                def.addSetup('::setKeymapManager()');
+            }
+
             if (builder.hasServiceDefinition('page')) {
                 builder.addServiceDefinition('dialogAgent', 'Nittro.Extras.Dialogs.Bridges.DialogsPage.DialogAgent()');
 

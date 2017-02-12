@@ -31,6 +31,10 @@ _context.invoke('Nittro.Extras.Dialogs', function(Dialog, DOM, Arrays) {
             this._.elms.form = form.getElement();
             DOM.addListener(this._.elms.form, 'submit', this._handleSubmit.bind(this));
 
+            if (this._.tabContext) {
+                this._.tabContext.addFromContainer(form.getElement(), false, 0);
+            }
+
             return this;
         },
 
@@ -64,7 +68,7 @@ _context.invoke('Nittro.Extras.Dialogs', function(Dialog, DOM, Arrays) {
         },
 
         _handleButton: function(evt) {
-            if (evt.data.value === 'confirm') {
+            if (evt.data.action === 'submit') {
                 evt.preventDefault();
                 this._.form.submit();
 
