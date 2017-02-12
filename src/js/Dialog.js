@@ -280,12 +280,12 @@ _context.invoke('Nittro.Extras.Dialogs', function(DOM, CSSTransitions, Arrays, R
         },
 
         _handleKey: function (key, evt) {
-            if (!evt.target || !evt.target.tagName || !evt.target.tagName.match(/^(input|button|textarea|select)$/i)) {
+            if (evt.target && evt.target.tagName && evt.target.tagName.match(/^(input|button|textarea|select)$/i) && DOM.contains(this._.elms.wrapper, evt.target)) {
+                return false;
+            } else {
                 this.trigger('button', {
                     action: this._.options.keyMap[key]
                 });
-            } else {
-                return false;
             }
         },
 
