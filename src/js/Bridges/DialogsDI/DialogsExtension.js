@@ -29,7 +29,7 @@ _context.invoke('Nittro.Extras.Dialogs.Bridges.DialogsDI', function() {
                 builder.getServiceDefinition('page')
                     .addSetup(function (dialogAgent) {
                         this.on('transaction-created', function (evt) {
-                            evt.data.transaction.add('dialogAgent', dialogAgent);
+                            dialogAgent.initTransaction(evt.data.transaction, evt.data.context);
                         });
                     });
             }

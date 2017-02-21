@@ -5,7 +5,7 @@ _context.invoke('Nittro.Extras.Dialogs.Bridges.DialogsPage', function (DOM) {
         this._.dialogManager = dialogManager;
 
     }, {
-        init: function (transaction, context) {
+        initTransaction: function (transaction, context) {
             var element = context.element,
                 snippet,
                 data = {};
@@ -14,34 +14,32 @@ _context.invoke('Nittro.Extras.Dialogs.Bridges.DialogsPage', function (DOM) {
                 data.snippet = snippet;
             }
 
-            return data;
+            transaction.on('dispatch', this._dispatch.bind(this));
+            transaction.on('snippets-apply', this._handleSnippets.bind(this, data));
         },
 
-        dispatch: function (transaction, data) {
+        _dispatch: function (evt) {
             if (this._.dialogManager.hasOpenDialog()) {
-                return this._.dialogManager.getTopmostOpenDialog().hide();
-
+                evt.waitFor(this._.dialogManager.getTopmostOpenDialog().hide());
             }
         },
 
-        abort: function (transaction, data) {
+        _handleSnippets: function (data, evt) {
+            var changeset = evt.data.changeset;
 
-        },
-
-        handleAction: function (transaction, agent, action, actionData, data) {
-            if (data.snippet && agent === 'snippets' && action === 'apply-changes' && data.snippet in actionData.update) {
-                var snippet = actionData.update[data.snippet],
+            if (data.snippet && data.snippet in changeset.update) {
+                var snippet = changeset.update[data.snippet],
                     id;
 
                 if (snippet.container) {
                     throw new Error('Dialogs from dynamic snippets aren\'t supported');
                 }
 
-                delete actionData.update[data.snippet];
+                delete changeset.update[data.snippet];
 
-                for (id in actionData.remove) {
-                    if (actionData.remove.hasOwnProperty(id) && actionData.remove[id].isDescendant && DOM.contains(snippet.element, actionData.remove[id].element)) {
-                        delete actionData.remove[id];
+                for (id in changeset.remove) {
+                    if (changeset.remove.hasOwnProperty(id) && changeset.remove[id].isDescendant && DOM.contains(snippet.element, changeset.remove[id].element)) {
+                        delete changeset.remove[id];
 
                     }
                 }
