@@ -1,10 +1,10 @@
 _context.invoke('Nittro.Extras.Dialogs', function (Dialog, DOM) {
 
-    var Manager = _context.extend('Nittro.Object', function() {
+    var Manager = _context.extend('Nittro.Object', function(baseZ) {
         Manager.Super.call(this);
 
         this._.stack = [];
-        this._.zIndex = 1000;
+        this._.zIndex = baseZ || 1000;
 
         this._handleShow = this._handleShow.bind(this);
         this._handleHide = this._handleHide.bind(this);

@@ -3,10 +3,23 @@ _context.invoke('Nittro.Extras.Dialogs.Bridges.DialogsDI', function() {
     var DialogsExtension = _context.extend('Nittro.DI.BuilderExtension', function(containerBuilder, config) {
         DialogsExtension.Super.call(this, containerBuilder, config);
     }, {
-        load: function () {
-            var builder = this._getContainerBuilder();
+        STATIC: {
+            defaults: {
+                baseZ: 1000
+            }
+        },
 
-            builder.addServiceDefinition('dialogManager', 'Nittro.Extras.Dialogs.Manager()');
+        load: function () {
+            var builder = this._getContainerBuilder(),
+                config = this._getConfig(DialogsExtension.defaults);
+
+            builder.addServiceDefinition('dialogManager', {
+                factory: 'Nittro.Extras.Dialogs.Manager()',
+                args: {
+                    baseZ: config.baseZ
+                }
+            });
+
             builder.addFactory('dialog', '@dialogManager::createDialog()');
         },
 
