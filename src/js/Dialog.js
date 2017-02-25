@@ -87,7 +87,7 @@ _context.invoke('Nittro.Extras.Dialogs', function(DOM, CSSTransitions, Arrays, R
 
         });
 
-        DOM.addListener(this._.elms.wrapper, 'click', this._handleButton.bind(this));
+        DOM.addListener(this._.elms.wrapper, 'click', this._handleClick.bind(this));
         DOM.addListener(this._.elms.holder, 'touchmove', this._handleTouchScroll.bind(this));
         this._handleScroll = this._handleScroll.bind(this);
 
@@ -267,7 +267,7 @@ _context.invoke('Nittro.Extras.Dialogs', function(DOM, CSSTransitions, Arrays, R
             }
         },
 
-        _handleButton: function (evt) {
+        _handleClick: function (evt) {
             var action = DOM.getData(evt.target, 'action');
 
             if (action) {
