@@ -17,7 +17,7 @@
   },
   "devDependencies": {
     "nittro-di": "^2.0.0",
-    "nittro-page": "^2.0.0",
+    "nittro-page": "^2.0.1",
     "nittro-forms": "^2.0.0",
     "nittro-extras-keymap": "^2.0.0",
     "gulp": "^3.9.1",

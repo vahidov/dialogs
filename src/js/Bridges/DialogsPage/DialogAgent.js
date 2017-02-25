@@ -1,8 +1,9 @@
 _context.invoke('Nittro.Extras.Dialogs.Bridges.DialogsPage', function (DOM) {
 
-    var DialogAgent = _context.extend('Nittro.Object', function (dialogManager) {
+    var DialogAgent = _context.extend('Nittro.Object', function (dialogManager, snippetManager) {
         DialogAgent.Super.call(this);
         this._.dialogManager = dialogManager;
+        this._.snippetManager = snippetManager;
 
     }, {
         initTransaction: function (transaction, context) {
@@ -10,22 +11,41 @@ _context.invoke('Nittro.Extras.Dialogs.Bridges.DialogsPage', function (DOM) {
                 snippet,
                 data = {};
 
-            if (element && (snippet = DOM.getData(element, 'dialog'))) {
-                data.snippet = snippet;
+            if (element) {
+                if (snippet = DOM.getData(element, 'dialog')) {
+                    data.snippet = snippet;
+                }
+
+                var open = this._.dialogManager.getOpenDialogs(),
+                    i;
+
+                for (i = 0; i < open.length; i++) {
+                    if (DOM.contains(open[i].getElement(), element)) {
+                        data.hiding = open[i];
+                        break;
+                    }
+                }
             }
 
-            transaction.on('dispatch', this._dispatch.bind(this));
+            transaction.on('dispatch', this._dispatch.bind(this, data));
             transaction.on('snippets-apply', this._handleSnippets.bind(this, data));
         },
 
-        _dispatch: function (evt) {
-            if (this._.dialogManager.hasOpenDialog()) {
-                evt.waitFor(this._.dialogManager.getTopmostOpenDialog().hide());
+        _dispatch: function (data, evt) {
+            if (data.hiding) {
+                data.hiding.off('hidden.cleanup');
+                evt.waitFor(data.hiding.hide());
             }
         },
 
         _handleSnippets: function (data, evt) {
             var changeset = evt.data.changeset;
+
+            if (data.hiding) {
+                this._.snippetManager.cleanupDescendants(data.hiding.getElement(), evt.data);
+                this._.snippetManager.one('before-update', data.hiding.destroy.bind(data.hiding));
+                data.hiding = null;
+            }
 
             if (data.snippet && data.snippet in changeset.update) {
                 var snippet = changeset.update[data.snippet],
@@ -44,12 +64,12 @@ _context.invoke('Nittro.Extras.Dialogs.Bridges.DialogsPage', function (DOM) {
                     }
                 }
 
-                this._openDialog(snippet.content);
+                this._.snippetManager.one('before-update', this._createDialog.bind(this, snippet.content));
 
             }
         },
 
-        _openDialog: function (content) {
+        _createDialog: function (content) {
             var options = {},
                 children = DOM.getChildren(content),
                 dialog;
@@ -65,8 +85,8 @@ _context.invoke('Nittro.Extras.Dialogs.Bridges.DialogsPage', function (DOM) {
                 dialog = this._.dialogManager.createDialog(options);
             }
 
-            dialog.show();
-            dialog.one('hidden', dialog.destroy.bind(dialog));
+            this._.snippetManager.one('after-update', dialog.show.bind(dialog));
+            dialog.one('hidden.cleanup', dialog.destroy.bind(dialog));
         }
     });
 

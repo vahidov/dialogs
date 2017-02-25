@@ -24,6 +24,10 @@ _context.invoke('Nittro.Extras.Dialogs', function (Dialog, DOM) {
             return this._.stack.length ? this._.stack[0] : null;
         },
 
+        getOpenDialogs: function () {
+            return this._.stack.slice();
+        },
+
         _setup: function (dialog) {
             dialog.on('show', this._handleShow);
             dialog.on('hide', this._handleHide);
