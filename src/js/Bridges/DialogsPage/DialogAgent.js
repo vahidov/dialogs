@@ -86,7 +86,12 @@ _context.invoke('Nittro.Extras.Dialogs.Bridges.DialogsPage', function (DOM) {
             }
 
             this._.snippetManager.one('after-update', dialog.show.bind(dialog));
-            dialog.one('hidden.cleanup', dialog.destroy.bind(dialog));
+            dialog.one('hidden.cleanup', this._destroyDialog.bind(this, dialog));
+        },
+
+        _destroyDialog: function (dialog) {
+            this._.snippetManager.cleanupDescendants(dialog.getElement());
+            dialog.destroy();
         }
     });
 
