@@ -42,7 +42,7 @@ _context.invoke('Nittro.Extras.Dialogs.Bridges.DialogsPage', function (DOM) {
             var changeset = evt.data.changeset;
 
             if (data.hiding) {
-                this._.snippetManager.cleanupDescendants(data.hiding.getElement(), evt.data);
+                this._.snippetManager.cleanupDescendants(data.hiding.getElement(), changeset);
                 this._.snippetManager.one('before-update', data.hiding.destroy.bind(data.hiding));
                 data.hiding = null;
             }
