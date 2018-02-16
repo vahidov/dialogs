@@ -13,8 +13,11 @@
     transition: height 0.5s step-end, background 0.5s cubic-bezier(.27,.78,.2,.98);
 
     .nittro-dialog-inner {
+        display: flex;
+        flex-flow: column nowrap;
         flex: 0 0 auto;
         min-width: 300px;
+        max-width: 96vw;
         max-height: 100vh;
         margin: 0 auto;
         padding: 0;
@@ -24,10 +27,12 @@
         transition: transform 0.3s ease-out;
 
         .nittro-dialog-content {
+            flex: 0 0 auto;
             padding: 30px 30px 15px;
         }
 
         .nittro-dialog-buttons {
+            flex: 0 0 auto;
             padding: 15px 30px 30px;
             text-align: center;
         }
@@ -37,12 +42,41 @@
         height: 100%;
         transition: height 0.3s step-start, background 1s ease-out;
 
-        .nittro-dialog-inner {
+        &:not(.busy) .nittro-dialog-inner {
             transform: translateY(0);
         }
     }
 
     &.topmost {
         background: rgba(0, 0, 0, 0.6);
+    }
+
+    &.nittro-dialog-iframe {
+        .nittro-dialog-inner {
+            flex: 1 1 auto;
+
+            .nittro-dialog-content {
+                display: block;
+                border: none;
+                flex: 1 1 auto;
+                margin: 0;
+            }
+        }
+
+        &.nittro-dialog-iframe-auto .nittro-dialog-inner {
+            flex: 0 0 auto;
+
+            .nittro-dialog-content {
+                flex: 0 1 auto;
+            }
+        }
+    }
+
+    &.nittro-dialog-ios {
+        position: absolute;
+
+        .nittro-dialog-inner {
+            max-height: 100%;
+        }
     }
 }

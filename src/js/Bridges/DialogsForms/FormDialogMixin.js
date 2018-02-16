@@ -6,20 +6,21 @@ _context.invoke('Nittro.Extras.Dialogs.Bridges.DialogsForms', function (Manager,
             return this;
         },
 
-        createFormDialog: function (options) {
-            var dlg = new FormDialog(options);
+        createFormDialog: function (name, options) {
+            var dlg = new FormDialog(name, options);
             this._setup(dlg);
 
             dlg.on('destroy', this._removeDialogForm.bind(this));
 
             var frm = dlg.getContent().getElementsByTagName('form').item(0);
-            dlg.setForm(this._.formLocator.getForm(frm));
+            frm && dlg.setForm(this._.formLocator.getForm(frm));
 
             return dlg;
         },
 
         _removeDialogForm: function (evt) {
             this._.formLocator.removeForm(evt.target.getForm().getElement());
+            evt.target.setForm(null);
         }
     };
 

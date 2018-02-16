@@ -2,6 +2,7 @@
     "files": {
         "js": [
             "src/js/Dialog.js",
+            "src/js/IFrameDialog.js",
             "src/js/Manager.js"
         ],
         "css": [

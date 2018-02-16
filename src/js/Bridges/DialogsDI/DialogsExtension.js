@@ -21,6 +21,7 @@ _context.invoke('Nittro.Extras.Dialogs.Bridges.DialogsDI', function() {
             });
 
             builder.addFactory('dialog', '@dialogManager::createDialog()');
+            builder.addFactory('iframeDialog', '@dialogManager::createIFrameDialog()');
         },
 
         setup: function() {
@@ -39,8 +40,17 @@ _context.invoke('Nittro.Extras.Dialogs.Bridges.DialogsDI', function() {
             if (builder.hasServiceDefinition('page')) {
                 builder.addServiceDefinition('dialogAgent', 'Nittro.Extras.Dialogs.Bridges.DialogsPage.DialogAgent()');
 
+                if (builder.hasServiceDefinition('formLocator')) {
+                    builder.getServiceDefinition('dialogAgent')
+                        .addSetup('::setFormLocator()');
+                }
+
                 builder.getServiceDefinition('page')
                     .addSetup(function (dialogAgent) {
+                        this.on('before-transaction', function (evt) {
+                            dialogAgent.tryIFrameTransaction(evt);
+                        });
+
                         this.on('transaction-created', function (evt) {
                             dialogAgent.initTransaction(evt.data.transaction, evt.data.context);
                         });

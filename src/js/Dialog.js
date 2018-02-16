@@ -1,13 +1,22 @@
 _context.invoke('Nittro.Extras.Dialogs', function(DOM, CSSTransitions, Arrays, ReflectionClass) {
 
-    var Dialog = _context.extend('Nittro.Object', function(options) {
+    var Dialog = _context.extend('Nittro.Object', function(name, options) {
         Dialog.Super.call(this);
 
+        this._.name = name;
         this._.options = Arrays.mergeTree({}, Dialog.getDefaults(this.constructor), options);
-        this._.visible = false;
+
+        this._.state = {
+            current: 'hidden',
+            next: null,
+            promise: null,
+            cancel: null
+        };
+
         this._.scrollPosition = null;
         this._.keyMap = null;
         this._.tabContext = null;
+        this._.ios = /ipod|ipad|iphone/i.test(navigator.userAgent);
 
         this._.elms = {
             holder : DOM.createFromHtml(this._.options.templates.holder),
@@ -18,9 +27,12 @@ _context.invoke('Nittro.Extras.Dialogs', function(DOM, CSSTransitions, Arrays, R
 
         this._.elms.holder.appendChild(this._.elms.wrapper);
 
+        if (this._.ios) {
+            DOM.addClass(this._.elms.holder, 'nittro-dialog-ios');
+        }
+
         if (this._.options.classes) {
             DOM.addClass(this._.elms.holder, this._.options.classes);
-
         }
 
         if (this._.options.content) {
@@ -38,7 +50,6 @@ _context.invoke('Nittro.Extras.Dialogs', function(DOM, CSSTransitions, Arrays, R
         } else if (this._.options.html) {
             this._.elms.content = DOM.createFromHtml(this._.options.templates.content);
             DOM.html(this._.elms.content, this._.options.html);
-
         }
 
         if (this._.elms.content) {
@@ -56,7 +67,6 @@ _context.invoke('Nittro.Extras.Dialogs', function(DOM, CSSTransitions, Arrays, R
             }
 
             this._.elms.wrapper.appendChild(this._.elms.buttons);
-
         }
 
         try {
@@ -84,11 +94,9 @@ _context.invoke('Nittro.Extras.Dialogs', function(DOM, CSSTransitions, Arrays, R
 
         this.on('button:default', function() {
             this.hide();
-
         });
 
         DOM.addListener(this._.elms.wrapper, 'click', this._handleClick.bind(this));
-        DOM.addListener(this._.elms.holder, 'touchmove', this._handleTouchScroll.bind(this));
         this._handleScroll = this._handleScroll.bind(this);
 
     }, {
@@ -100,7 +108,7 @@ _context.invoke('Nittro.Extras.Dialogs', function(DOM, CSSTransitions, Arrays, R
                 text: null,
                 buttons: null,
                 keyMap: {
-                    'Escape': 'cancel'
+                    'Escape': 'close'
                 },
                 templates: {
                     holder : '<div class="nittro-dialog-holder"></div>',
@@ -119,102 +127,88 @@ _context.invoke('Nittro.Extras.Dialogs', function(DOM, CSSTransitions, Arrays, R
                         for (k in type.defaults) {
                             if (type.defaults.hasOwnProperty(k) && !defaults.hasOwnProperty(k)) {
                                 defaults[k] = type.defaults[k];
-
                             }
                         }
                     }
-
-                    type = type.Super;
-
-                } while (type && type !== Dialog.Super);
+                } while ((type = type.Super) && type !== Dialog.Super);
 
                 return defaults;
-
             },
             setDefaults: function(options) {
                 Arrays.mergeTree(Dialog.defaults, options);
-
             }
         },
 
-        isVisible: function() {
-            return this._.visible;
+        getName: function () {
+            return this._.name;
+        },
 
+        isVisible: function(next) {
+            return this._.state.current === 'visible' && !this._.state.next
+                || next && this._.state.next === 'visible';
         },
 
         show: function() {
-            if (this._.visible) {
-                return;
+            return this._setState('visible', function (done) {
+                this._lockScrolling();
 
-            }
+                if (this._.state.current === 'hidden') {
+                    this.trigger('show');
+                }
 
-            this._.visible = true;
+                DOM.toggleClass(this._.elms.holder, 'visible', true);
+                DOM.toggleClass(this._.elms.holder, 'busy', false);
 
-            this._.scrollLock = {
-                left: window.pageXOffset,
-                top: window.pageYOffset
-            };
-
-            if (/ipod|ipad|iphone/i.test(navigator.userAgent)) {
-                this._.scrollPosition = window.pageYOffset;
-                window.scrollTo(0, 0);
-                this._.scrollLock.left = 0;
-                this._.scrollLock.top = 0;
-
-            }
-
-            DOM.addListener(window, 'scroll', this._handleScroll);
-            DOM.addClass(this._.elms.holder, 'visible');
-
-            this.trigger('show');
-
-            return CSSTransitions.run(this._.elms.holder)
-                .then(function () {
-                    this.trigger('shown');
-                    return this;
-                }.bind(this));
+                CSSTransitions.run(this._.elms.wrapper)
+                    .then(done.bind(this, 'shown'));
+            });
         },
 
         hide: function() {
-            if (!this._.visible) {
-                return;
+            return this._setState('hidden', function (done) {
+                this._unlockScrolling();
 
-            }
+                this.trigger('hide');
 
-            this._.visible = false;
+                DOM.toggleClass(this._.elms.holder, 'visible', false);
+                DOM.toggleClass(this._.elms.holder, 'busy', false);
 
-            DOM.removeListener(window, 'scroll', this._handleScroll);
+                CSSTransitions.run(this._.elms.wrapper)
+                    .then(done.bind(this, 'hidden'));
+            });
+        },
 
-            if (/ipod|ipad|iphone/i.test(navigator.userAgent)) {
-                window.scrollTo(0, this._.scrollPosition);
-                this._.scrollPosition = null;
+        isBusy: function (next) {
+            return this._.state.current === 'busy' && !this._.state.next
+                || next && this._.state.next === 'busy';
+        },
 
-            }
+        setBusy: function () {
+            return this._setState('busy', function (done) {
+                this._lockScrolling();
 
-            this.trigger('hide');
+                if (this._.state.current === 'hidden') {
+                    this.trigger('show');
+                }
 
-            DOM.removeClass(this._.elms.holder, 'visible');
+                DOM.toggleClass(this._.elms.holder, 'visible', true);
+                DOM.toggleClass(this._.elms.holder, 'busy', true);
 
-            return CSSTransitions.run(this._.elms.holder)
-                .then(function () {
-                    this.trigger('hidden');
-                    return this;
-                }.bind(this));
+                CSSTransitions.run(this._.elms.wrapper)
+                    .then(done.bind(this, 'busy'));
+            });
         },
 
         getElement: function () {
             return this._.elms.holder;
-
         },
 
         getContent: function() {
             return this._.elms.content;
-
         },
 
         getButtons: function() {
             return this._.elms.buttons;
-
         },
 
         getKeyMap: function () {
@@ -226,9 +220,8 @@ _context.invoke('Nittro.Extras.Dialogs', function(DOM, CSSTransitions, Arrays, R
         },
 
         destroy: function () {
-            if (this._.visible) {
-                this.hide().then(this.destroy.bind(this));
-
+            if (this._.state.current !== 'hidden') {
+                return this.hide().then(this.destroy.bind(this));
             } else {
                 this.trigger('destroy');
 
@@ -241,6 +234,75 @@ _context.invoke('Nittro.Extras.Dialogs', function(DOM, CSSTransitions, Arrays, R
                 for (var k in this._.elms) {
                     this._.elms[k] = null;
                 }
+
+                return Promise.resolve();
+            }
+        },
+
+        _setState: function (state, init, cancel) {
+            if (this._.state === state) {
+                return Promise.resolve();
+            } else if (this._.state.next === state) {
+                return this._.state.promise;
+            } else if (this._.state.cancel) {
+                this._.state.cancel();
+            }
+
+            this._.state.next = state;
+
+            return this._.state.promise = new Promise(function (fulfill, reject) {
+                var resolved = null;
+
+                this._.state.cancel = function () {
+                    if (resolved === null) {
+                        resolved = false;
+                        this._.state.next = null;
+                        this._.state.promise = null;
+                        this._.state.cancel = null;
+                        cancel && cancel.call(this);
+                        reject();
+                    }
+                }.bind(this);
+
+                init.call(this, function(evt) {
+                    if (resolved === null) {
+                        resolved = true;
+                        this._.state.current = state;
+                        this._.state.next = null;
+                        this._.state.promise = null;
+                        this._.state.cancel = null;
+                        evt && this.trigger(evt);
+                        fulfill();
+                    }
+                }.bind(this));
+            }.bind(this));
+        },
+
+        _lockScrolling: function () {
+            if (this._.state.current !== 'hidden') {
+                // noop
+            } else if (this._.ios) {
+                this._.scrollPosition = window.pageYOffset;
+                window.scrollTo(0, 0);
+            } else {
+                this._.scrollLock = {
+                    left: window.pageXOffset,
+                    top: window.pageYOffset
+                };
+
+                DOM.addListener(window, 'scroll', this._handleScroll);
+            }
+        },
+
+        _unlockScrolling: function () {
+            if (this._.state.next !== 'hidden') {
+                // noop
+            } else if (this._.ios) {
+                window.scrollTo(0, this._.scrollPosition);
+                this._.scrollPosition = null;
+            } else {
+                DOM.removeListener(window, 'scroll', this._handleScroll);
+                this._.scrollLock = null;
             }
         },
 
@@ -255,7 +317,6 @@ _context.invoke('Nittro.Extras.Dialogs', function(DOM, CSSTransitions, Arrays, R
 
                     if (typeof def === 'string') {
                         def = {label: def, type: 'button'};
-
                     }
 
                     DOM.setData(btn, 'action', action);
@@ -289,16 +350,10 @@ _context.invoke('Nittro.Extras.Dialogs', function(DOM, CSSTransitions, Arrays, R
             }
         },
 
-        _handleTouchScroll: function (evt) {
-            if (this._.elms.holder === evt.target) {
-                evt.preventDefault();
-
+        _handleScroll: function (evt) {
+            if (evt.target === window || evt.target === document) {
+                window.scrollTo(this._.scrollLock.left, this._.scrollLock.top);
             }
-        },
-
-        _handleScroll: function () {
-            window.scrollTo(this._.scrollLock.left, this._.scrollLock.top);
-
         }
     });
 

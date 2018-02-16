@@ -1,17 +1,25 @@
-_context.invoke('Nittro.Extras.Dialogs', function (Dialog, DOM) {
+_context.invoke('Nittro.Extras.Dialogs', function (Dialog, IFrameDialog, DOM) {
 
     var Manager = _context.extend('Nittro.Object', function(baseZ) {
         Manager.Super.call(this);
 
+        this._.registry = {};
         this._.stack = [];
         this._.zIndex = baseZ || 1000;
 
         this._handleShow = this._handleShow.bind(this);
         this._handleHide = this._handleHide.bind(this);
+        this._handleDestroy = this._handleDestroy.bind(this);
 
     }, {
-        createDialog: function (options) {
-            var dlg = new Dialog(options);
+        createDialog: function (name, options) {
+            var dlg = new Dialog(name, options);
+            this._setup(dlg);
+            return dlg;
+        },
+
+        createIFrameDialog: function (name, url, options) {
+            var dlg = new IFrameDialog(name, url, options);
             this._setup(dlg);
             return dlg;
         },
@@ -28,9 +36,32 @@ _context.invoke('Nittro.Extras.Dialogs', function (Dialog, DOM) {
             return this._.stack.slice();
         },
 
+        getDialog: function (name) {
+            return this._.registry[name] || null;
+        },
+
+        registerDialog: function (dialog) {
+            if (dialog.getName() in this._.registry) {
+                throw new Error('A dialog named "' + dialog.getName() + '" already exists');
+            }
+
+            this._.registry[dialog.getName()] = dialog;
+            return this;
+        },
+
+        unregisterDialog: function (name) {
+            if (name in this._.registry) {
+                delete this._.registry[name];
+            }
+
+            return this;
+        },
+
         _setup: function (dialog) {
+            this.registerDialog(dialog);
             dialog.on('show', this._handleShow);
             dialog.on('hide', this._handleHide);
+            dialog.on('destroy', this._handleDestroy);
             this.trigger('setup', {dialog: dialog});
             document.body.appendChild(dialog.getElement());
         },
@@ -57,6 +88,10 @@ _context.invoke('Nittro.Extras.Dialogs', function (Dialog, DOM) {
             if (this._.stack.length) {
                 DOM.toggleClass(this._.stack[0].getElement(), 'topmost', true);
             }
+        },
+
+        _handleDestroy: function (evt) {
+            this.unregisterDialog(evt.target.getName());
         }
     });
 
