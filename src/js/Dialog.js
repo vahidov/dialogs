@@ -7,6 +7,7 @@ _context.invoke('Nittro.Extras.Dialogs', function(DOM, CSSTransitions, Arrays, R
         this._.options = Arrays.mergeTree({}, Dialog.getDefaults(this.constructor), options);
 
         this._.state = {
+            visible: false,
             current: 'hidden',
             next: null,
             promise: null,
@@ -152,9 +153,7 @@ _context.invoke('Nittro.Extras.Dialogs', function(DOM, CSSTransitions, Arrays, R
             return this._setState('visible', function (done) {
                 this._lockScrolling();
 
-                if (this._.state.current === 'hidden') {
-                    this.trigger('show');
-                }
+                this._setVisible(true);
 
                 DOM.toggleClass(this._.elms.holder, 'visible', true);
                 DOM.toggleClass(this._.elms.holder, 'busy', false);
@@ -168,7 +167,7 @@ _context.invoke('Nittro.Extras.Dialogs', function(DOM, CSSTransitions, Arrays, R
             return this._setState('hidden', function (done) {
                 this._unlockScrolling();
 
-                this.trigger('hide');
+                this._setVisible(false);
 
                 DOM.toggleClass(this._.elms.holder, 'visible', false);
                 DOM.toggleClass(this._.elms.holder, 'busy', false);
@@ -187,9 +186,7 @@ _context.invoke('Nittro.Extras.Dialogs', function(DOM, CSSTransitions, Arrays, R
             return this._setState('busy', function (done) {
                 this._lockScrolling();
 
-                if (this._.state.current === 'hidden') {
-                    this.trigger('show');
-                }
+                this._setVisible(true);
 
                 DOM.toggleClass(this._.elms.holder, 'visible', true);
                 DOM.toggleClass(this._.elms.holder, 'busy', true);
@@ -276,6 +273,13 @@ _context.invoke('Nittro.Extras.Dialogs', function(DOM, CSSTransitions, Arrays, R
                     }
                 }.bind(this));
             }.bind(this));
+        },
+
+        _setVisible: function (state) {
+            if (this._.state.visible !== state) {
+                this._.state.visible = state;
+                this.trigger(state ? 'show' : 'hide');
+            }
         },
 
         _lockScrolling: function () {

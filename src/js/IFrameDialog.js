@@ -53,7 +53,7 @@ _context.invoke('Nittro.Extras.Dialogs', function (Dialog, DOM, Arrays, Url) {
 
             if ((busy = this.isBusy(true)) || this.isVisible(true)) {
                 promise = this.setBusy()
-                    .then(this._load.bind(this, true));
+                    .then(this._load.bind(this));
 
                 return busy ? promise : promise.then(this.show.bind(this));
             } else if (!this._.options.lazy) {
