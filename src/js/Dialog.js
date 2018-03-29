@@ -9,6 +9,7 @@ _context.invoke('Nittro.Extras.Dialogs', function(DOM, CSSTransitions, Arrays, R
         this._.state = {
             visible: false,
             current: 'hidden',
+            scrollLock: false,
             next: null,
             promise: null,
             cancel: null
@@ -152,7 +153,6 @@ _context.invoke('Nittro.Extras.Dialogs', function(DOM, CSSTransitions, Arrays, R
         show: function() {
             return this._setState('visible', function (done) {
                 this._lockScrolling();
-
                 this._setVisible(true);
 
                 DOM.toggleClass(this._.elms.holder, 'visible', true);
@@ -166,7 +166,6 @@ _context.invoke('Nittro.Extras.Dialogs', function(DOM, CSSTransitions, Arrays, R
         hide: function() {
             return this._setState('hidden', function (done) {
                 this._unlockScrolling();
-
                 this._setVisible(false);
 
                 DOM.toggleClass(this._.elms.holder, 'visible', false);
@@ -185,7 +184,6 @@ _context.invoke('Nittro.Extras.Dialogs', function(DOM, CSSTransitions, Arrays, R
         setBusy: function () {
             return this._setState('busy', function (done) {
                 this._lockScrolling();
-
                 this._setVisible(true);
 
                 DOM.toggleClass(this._.elms.holder, 'visible', true);
@@ -247,7 +245,7 @@ _context.invoke('Nittro.Extras.Dialogs', function(DOM, CSSTransitions, Arrays, R
 
             this._.state.next = state;
 
-            return this._.state.promise = new Promise(function (fulfill, reject) {
+            return this._.state.promise = new Promise(function (fulfill) {
                 var resolved = null;
 
                 this._.state.cancel = function () {
@@ -257,7 +255,7 @@ _context.invoke('Nittro.Extras.Dialogs', function(DOM, CSSTransitions, Arrays, R
                         this._.state.promise = null;
                         this._.state.cancel = null;
                         cancel && cancel.call(this);
-                        reject();
+                        fulfill();
                     }
                 }.bind(this);
 
@@ -283,9 +281,13 @@ _context.invoke('Nittro.Extras.Dialogs', function(DOM, CSSTransitions, Arrays, R
         },
 
         _lockScrolling: function () {
-            if (this._.state.current !== 'hidden') {
-                // noop
-            } else if (this._.ios) {
+            if (this._.state.scrollLock) {
+                return;
+            }
+
+            this._.state.scrollLock = true;
+
+            if (this._.ios) {
                 this._.scrollPosition = window.pageYOffset;
                 window.scrollTo(0, 0);
             } else {
@@ -299,9 +301,13 @@ _context.invoke('Nittro.Extras.Dialogs', function(DOM, CSSTransitions, Arrays, R
         },
 
         _unlockScrolling: function () {
-            if (this._.state.next !== 'hidden') {
-                // noop
-            } else if (this._.ios) {
+            if (!this._.state.scrollLock) {
+                return;
+            }
+
+            this._.state.scrollLock = false;
+
+            if (this._.ios) {
                 window.scrollTo(0, this._.scrollPosition);
                 this._.scrollPosition = null;
             } else {
