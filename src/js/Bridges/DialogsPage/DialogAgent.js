@@ -92,8 +92,8 @@ _context.invoke('Nittro.Extras.Dialogs.Bridges.DialogsPage', function (DOM, Url,
                     this._mergeDefinition(data, def, current, context.element);
                 }
 
-                if (current) {
-                    if (current.__keep && data.dialogs[current.getName()] === false) {
+                if (current && current.__keep) {
+                    if (data.dialogs[current.getName()] === false) {
                         delete data.dialogs[current.getName()];
                     }
 
@@ -188,7 +188,9 @@ _context.invoke('Nittro.Extras.Dialogs.Bridges.DialogsPage', function (DOM, Url,
                 throw new Error('Invalid dialog definition: must be an object with the keys "name" and "source" and optionally "type" and / or "options"');
             }
 
-            data.dialogs[def.name] = def;
+            if (def) {
+                data.dialogs[def.name] = def;
+            }
         },
 
         _parseDescriptor: function (descriptor, current, element, name) {
@@ -215,24 +217,24 @@ _context.invoke('Nittro.Extras.Dialogs.Bridges.DialogsPage', function (DOM, Url,
                     name: 'dlg-anonymous' + (++this._.anonId),
                     source: descriptor
                 };
-            } else if (m[2]) {
-                if (current && (m[2] === 'current' || element && DOM.contains(current.getContent(), element))) {
+            } else if (m[1]) {
+                if (current && (m[1] === 'current' || element && DOM.contains(current.getContent(), element))) {
                     return {
                         name: current.getName(),
-                        source: m[5]
+                        source: m[4]
                     };
                 } else {
                     return null;
                 }
             } else {
-                if (!m[4] && !name) {
+                if (!m[3] && !name) {
                     throw new Error('Missing dialog name in definition "' + descriptor + '"');
                 }
 
                 return {
-                    name: m[4] || name,
-                    type: m[3] || null,
-                    source: m[5]
+                    name: m[3] || name,
+                    type: m[2] || null,
+                    source: m[4]
                 };
             }
         },
