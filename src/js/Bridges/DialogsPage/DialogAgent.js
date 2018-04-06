@@ -106,16 +106,6 @@ _context.invoke('Nittro.Extras.Dialogs.Bridges.DialogsPage', function (DOM, Url,
             transaction.on('snippets-apply', this._handleSnippets.bind(this, data));
         },
 
-        _mergeDefinition: function (data, def, current, elem, name) {
-            if (typeof def === 'string') {
-                def = this._parseDescriptor(def, current, elem, name);
-            } else if (typeof def !== 'object' || !def.name || !def.source) {
-                throw new Error('Invalid dialog definition: must be an object with the keys "name" and "source" and optionally "type" and / or "options"');
-            }
-
-            data.dialogs[def.name] = def;
-        },
-
         _dispatch: function (data, evt) {
             var name, promise;
 
@@ -191,12 +181,29 @@ _context.invoke('Nittro.Extras.Dialogs.Bridges.DialogsPage', function (DOM, Url,
             return !def.type || def.type === 'form';
         },
 
-        _parseDescriptor: function (descriptor, current, element, name) {
-            var m = /^(keep-current;\s*)?(?:(self|current)|(?:(form|iframe)(?=[\s:]))?\s*([^:]+?)?)\s*:\s*(.+)$/.exec(descriptor);
-
-            if (current) {
-                current.__keep = m && !!m[1];
+        _mergeDefinition: function (data, def, current, elem, name) {
+            if (typeof def === 'string') {
+                def = this._parseDescriptor(def, current, elem, name);
+            } else if (typeof def !== 'object' || !def.name || !def.source) {
+                throw new Error('Invalid dialog definition: must be an object with the keys "name" and "source" and optionally "type" and / or "options"');
             }
+
+            data.dialogs[def.name] = def;
+        },
+
+        _parseDescriptor: function (descriptor, current, element, name) {
+            var m = /^keep-current(?:;\s*|$)/.exec(descriptor);
+
+            if (m) {
+                descriptor = descriptor.substr(m[0].length);
+                current && (current.__keep = true);
+
+                if (!descriptor) {
+                    return null;
+                }
+            }
+
+            m = /^(?:(self|current)|(?:(form|iframe)(?=[\s:]))?\s*([^:]+?)?)\s*:\s*(.+)$/.exec(descriptor);
 
             if (!m) {
                 window.console && console.warn(
