@@ -81,13 +81,7 @@ _context.invoke('Nittro.Extras.Dialogs.Bridges.DialogsPage', function (DOM, Url,
 
             if (context.dialogs) {
                 for (name in context.dialogs) if (context.dialogs.hasOwnProperty(name)) {
-                    def = context.dialogs[name];
-
-                    if (typeof def === 'string') {
-                        def = this._parseDescriptor(def, current, context.element, name);
-                    }
-
-                    data.dialogs[name] = def;
+                    this._mergeDefinition(context.dialogs[name], data, current, context.element, name);
                 }
             } else {
                 if (current) {
@@ -95,19 +89,31 @@ _context.invoke('Nittro.Extras.Dialogs.Bridges.DialogsPage', function (DOM, Url,
                 }
 
                 if (context.element && (def = DOM.getData(context.element, 'dialog')) !== undefined) {
-                    if (typeof def === 'string') {
-                        def = this._parseDescriptor(def, current, context.element);
-                    } else if (typeof def !== 'object' || !def.name || !def.source) {
-                        throw new Error('Invalid dialog definition: must be an object with the keys "name" and "source" and optionally "type" and / or "options"');
+                    this._mergeDefinition(def, data, current, context.element);
+                }
+
+                if (current) {
+                    if (current.__keep && data.dialogs[current.getName()] === false) {
+                        delete data.dialogs[current.getName()];
                     }
 
-                    data.dialogs[def.name] = def;
+                    delete current.__keep;
                 }
             }
 
             transaction.on('dispatch', this._dispatch.bind(this, data));
             transaction.on('ajax-response', this._handleResponse.bind(this, data));
             transaction.on('snippets-apply', this._handleSnippets.bind(this, data));
+        },
+
+        _mergeDefinition: function (def, current, elem, name) {
+            if (typeof def === 'string') {
+                def = this._parseDescriptor(def, current, elem, name);
+            } else if (typeof def !== 'object' || !def.name || !def.source) {
+                throw new Error('Invalid dialog definition: must be an object with the keys "name" and "source" and optionally "type" and / or "options"');
+            }
+
+            data.dialogs[def.name] = def;
         },
 
         _dispatch: function (data, evt) {
@@ -186,7 +192,11 @@ _context.invoke('Nittro.Extras.Dialogs.Bridges.DialogsPage', function (DOM, Url,
         },
 
         _parseDescriptor: function (descriptor, current, element, name) {
-            var m = /^(?:(self|current)|(?:(form|iframe)(?=[\s:]))?\s*([^:]+?)?)\s*:\s*(.+)$/.exec(descriptor);
+            var m = /^(keep-current;\s*)?(?:(self|current)|(?:(form|iframe)(?=[\s:]))?\s*([^:]+?)?)\s*:\s*(.+)$/.exec(descriptor);
+
+            if (current) {
+                current.__keep = m && !!m[1];
+            }
 
             if (!m) {
                 window.console && console.warn(
@@ -198,24 +208,24 @@ _context.invoke('Nittro.Extras.Dialogs.Bridges.DialogsPage', function (DOM, Url,
                     name: 'dlg-anonymous' + (++this._.anonId),
                     source: descriptor
                 };
-            } else if (m[1]) {
-                if (current && (m[1] === 'current' || element && DOM.contains(current.getContent(), element))) {
+            } else if (m[2]) {
+                if (current && (m[2] === 'current' || element && DOM.contains(current.getContent(), element))) {
                     return {
                         name: current.getName(),
-                        source: m[4]
+                        source: m[5]
                     };
                 } else {
                     return null;
                 }
             } else {
-                if (!m[3] && !name) {
+                if (!m[4] && !name) {
                     throw new Error('Missing dialog name in definition "' + descriptor + '"');
                 }
 
                 return {
-                    name: m[3] || name,
-                    type: m[2] || null,
-                    source: m[4]
+                    name: m[4] || name,
+                    type: m[3] || null,
+                    source: m[5]
                 };
             }
         },
