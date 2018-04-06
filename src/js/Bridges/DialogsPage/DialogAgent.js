@@ -81,7 +81,7 @@ _context.invoke('Nittro.Extras.Dialogs.Bridges.DialogsPage', function (DOM, Url,
 
             if (context.dialogs) {
                 for (name in context.dialogs) if (context.dialogs.hasOwnProperty(name)) {
-                    this._mergeDefinition(context.dialogs[name], data, current, context.element, name);
+                    this._mergeDefinition(data, context.dialogs[name], current, context.element, name);
                 }
             } else {
                 if (current) {
@@ -89,7 +89,7 @@ _context.invoke('Nittro.Extras.Dialogs.Bridges.DialogsPage', function (DOM, Url,
                 }
 
                 if (context.element && (def = DOM.getData(context.element, 'dialog')) !== undefined) {
-                    this._mergeDefinition(def, data, current, context.element);
+                    this._mergeDefinition(data, def, current, context.element);
                 }
 
                 if (current) {
@@ -106,7 +106,7 @@ _context.invoke('Nittro.Extras.Dialogs.Bridges.DialogsPage', function (DOM, Url,
             transaction.on('snippets-apply', this._handleSnippets.bind(this, data));
         },
 
-        _mergeDefinition: function (def, current, elem, name) {
+        _mergeDefinition: function (data, def, current, elem, name) {
             if (typeof def === 'string') {
                 def = this._parseDescriptor(def, current, elem, name);
             } else if (typeof def !== 'object' || !def.name || !def.source) {
