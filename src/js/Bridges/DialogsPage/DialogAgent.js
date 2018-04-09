@@ -245,8 +245,7 @@ _context.invoke('Nittro.Extras.Dialogs.Bridges.DialogsPage', function (DOM, Url,
 
             if (!def) {
                 if (dlg) {
-                    this._.dialogManager.unregisterDialog(name);
-                    promise = dlg.hide();
+                    promise = dlg.destroy();
                 }
             } else {
                 if (!dlg) {
@@ -283,7 +282,9 @@ _context.invoke('Nittro.Extras.Dialogs.Bridges.DialogsPage', function (DOM, Url,
                 dlg = this._.dialogManager.createDialog(name, def.options);
             }
 
-            dlg.on('hidden', this._cleanupDialog.bind(this, this._isSnippetType(def)));
+            if (this._isSnippetType(def)) {
+                dlg.on('hidden', this._cleanupDialog.bind(this));
+            }
 
             return dlg;
         },
@@ -293,12 +294,8 @@ _context.invoke('Nittro.Extras.Dialogs.Bridges.DialogsPage', function (DOM, Url,
             frm && dlg.setForm(this._.formLocator.getForm(frm));
         },
 
-        _cleanupDialog: function (snippets, evt) {
-            if (snippets) {
-                this._.snippetManager.cleanupDescendants(evt.target.getElement());
-            }
-
-            evt.target.destroy();
+        _cleanupDialog: function (evt) {
+            this._.snippetManager.cleanupDescendants(evt.target.getElement());
         }
     });
 

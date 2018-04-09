@@ -8,6 +8,7 @@ _context.invoke('Nittro.Extras.Dialogs', function(DOM, CSSTransitions, Arrays, R
 
         this._.state = {
             visible: false,
+            destroying: null,
             current: 'hidden',
             scrollLock: false,
             next: null,
@@ -215,27 +216,38 @@ _context.invoke('Nittro.Extras.Dialogs', function(DOM, CSSTransitions, Arrays, R
         },
 
         destroy: function () {
+            if (this._.state.destroying) {
+                return this._.state.destroying;
+            }
+
+            this._.state.destroying = Promise.resolve();
+            this.trigger('destroy');
+
             if (this._.state.current !== 'hidden') {
-                return this.hide().then(this.destroy.bind(this));
-            } else {
-                this.trigger('destroy');
+                this._.state.destroying = this._.state.destroying.then(this.hide.bind(this));
+            }
 
-                if (this._.elms.holder.parentNode) {
-                    this._.elms.holder.parentNode.removeChild(this._.elms.holder);
-                }
+            this._.state.destroying = this._.state.destroying.then(this._doDestroy.bind(this));
+        },
 
-                this.off();
+        _doDestroy: function () {
+            this.trigger('destroyed');
 
-                for (var k in this._.elms) {
-                    this._.elms[k] = null;
-                }
+            if (this._.elms.holder.parentNode) {
+                this._.elms.holder.parentNode.removeChild(this._.elms.holder);
+            }
 
-                return Promise.resolve();
+            this.off();
+
+            this._.state = null;
+
+            for (var k in this._.elms) {
+                this._.elms[k] = null;
             }
         },
 
         _setState: function (state, init, cancel) {
-            if (this._.state === state) {
+            if (this._.state.current === state || this._.state.destroying) {
                 return Promise.resolve();
             } else if (this._.state.next === state) {
                 return this._.state.promise;

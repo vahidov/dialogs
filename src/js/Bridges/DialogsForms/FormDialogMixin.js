@@ -10,7 +10,7 @@ _context.invoke('Nittro.Extras.Dialogs.Bridges.DialogsForms', function (Manager,
             var dlg = new FormDialog(name, options);
             this._setup(dlg);
 
-            dlg.on('destroy', this._removeDialogForm.bind(this));
+            dlg.on('destroyed', this._removeDialogForm.bind(this));
 
             var frm = dlg.getContent().getElementsByTagName('form').item(0);
             frm && dlg.setForm(this._.formLocator.getForm(frm));
