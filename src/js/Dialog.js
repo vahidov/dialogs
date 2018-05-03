@@ -8,7 +8,7 @@ _context.invoke('Nittro.Extras.Dialogs', function(DOM, CSSTransitions, Arrays, R
 
         this._.state = {
             visible: false,
-            destroying: null,
+            destroying: false,
             current: 'hidden',
             scrollLock: false,
             next: null,
@@ -217,17 +217,17 @@ _context.invoke('Nittro.Extras.Dialogs', function(DOM, CSSTransitions, Arrays, R
 
         destroy: function () {
             if (this._.state.destroying) {
-                return this._.state.destroying;
+                return;
             }
 
-            this._.state.destroying = Promise.resolve();
+            this._.state.destroying = true;
             this.trigger('destroy');
 
             if (this._.state.current !== 'hidden') {
-                this._.state.destroying = this._.state.destroying.then(this.hide.bind(this));
+                this.hide().then(this._doDestroy.bind(this));
+            } else {
+                this._doDestroy();
             }
-
-            this._.state.destroying = this._.state.destroying.then(this._doDestroy.bind(this));
         },
 
         _doDestroy: function () {
@@ -247,7 +247,7 @@ _context.invoke('Nittro.Extras.Dialogs', function(DOM, CSSTransitions, Arrays, R
         },
 
         _setState: function (state, init, cancel) {
-            if (this._.state.current === state || this._.state.destroying) {
+            if (this._.state.current === state) {
                 return Promise.resolve();
             } else if (this._.state.next === state) {
                 return this._.state.promise;
