@@ -342,7 +342,7 @@ _context.invoke('Nittro.Extras.Dialogs', function(DOM, CSSTransitions, Arrays, R
                     }
 
                     DOM.setData(btn, 'action', action);
-                    DOM.addClass(btn, 'nittro-dialog-button', def.type === 'text' ? 'nittro-dialog-button-text' : '');
+                    DOM.addClass(btn, 'nittro-dialog-button', def.type && def.type !== 'button' ? 'nittro-dialog-button-' + def.type : '');
                     btn.textContent = def.label;
 
                     this._.elms.buttons.appendChild(btn);
