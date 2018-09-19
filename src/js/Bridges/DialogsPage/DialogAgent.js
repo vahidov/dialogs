@@ -160,19 +160,23 @@ _context.invoke('Nittro.Extras.Dialogs.Bridges.DialogsPage', function (DOM, Url,
                         }
                     }
 
-                    content = dlg.getContent();
-                    content.id = def.source.replace(/^snippet-/, 'dlg-');
+                    id = def.source.replace(/^snippet-/, 'dlg-');
                     delete changeset.update[def.source];
-                    changeset.update[content.id] = snippet;
-                    snippet.element = content;
 
-                    if (this._.formLocator && def.type === 'form') {
-                        evt.target.then(this._injectForm.bind(this, dlg));
+                    if (dlg) {
+                        changeset.update[id] = snippet;
+                        content = dlg.getContent();
+                        content.id = id;
+                        snippet.element = content;
+
+                        if (this._.formLocator && def.type === 'form') {
+                            evt.target.then(this._injectForm.bind(this, dlg));
+                        }
+
+                        evt.target.then(dlg.show.bind(dlg));
                     }
-
-                    evt.target.then(dlg.show.bind(dlg));
                 } else {
-                    evt.waitFor(dlg.hide());
+                    dlg && evt.waitFor(dlg.hide());
                 }
             }
         },

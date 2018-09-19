@@ -19,6 +19,7 @@ _context.invoke('Nittro.Extras.Dialogs', function(DOM, CSSTransitions, Arrays, R
         this._.scrollPosition = null;
         this._.keyMap = null;
         this._.tabContext = null;
+        this._.origFocusTarget = null;
         this._.ios = /ipod|ipad|iphone/i.test(navigator.userAgent);
 
         this._.elms = {
@@ -95,9 +96,9 @@ _context.invoke('Nittro.Extras.Dialogs', function(DOM, CSSTransitions, Arrays, R
             this._.tabContext.addFromContainer(this._.elms.buttons, true);
         }
 
-        this.on('button:default', function() {
-            this.hide();
-        });
+        this.on('button:default', this.hide.bind(this));
+        this.on('show', this._saveFocusedElement.bind(this));
+        this.on('hide', this._restoreFocusedElement.bind(this));
 
         DOM.addListener(this._.elms.wrapper, 'click', this._handleClick.bind(this));
         this._handleScroll = this._handleScroll.bind(this);
@@ -231,6 +232,10 @@ _context.invoke('Nittro.Extras.Dialogs', function(DOM, CSSTransitions, Arrays, R
         },
 
         _doDestroy: function () {
+            if (this._.state.cancel) {
+                this._.state.cancel();
+            }
+
             this.trigger('destroyed');
 
             if (this._.elms.holder.parentNode) {
@@ -241,7 +246,7 @@ _context.invoke('Nittro.Extras.Dialogs', function(DOM, CSSTransitions, Arrays, R
 
             this._.state = null;
 
-            for (var k in this._.elms) {
+            for (var k in this._.elms) if (this._.elms.hasOwnProperty(k)) {
                 this._.elms[k] = null;
             }
         },
@@ -290,6 +295,16 @@ _context.invoke('Nittro.Extras.Dialogs', function(DOM, CSSTransitions, Arrays, R
                 this._.state.visible = state;
                 this.trigger(state ? 'show' : 'hide');
             }
+        },
+
+        _saveFocusedElement: function () {
+            this._.origFocusTarget = document.activeElement;
+            this._.origFocusTarget && this._.origFocusTarget.blur();
+        },
+
+        _restoreFocusedElement: function () {
+            this._.origFocusTarget && DOM.contains(document, this._.origFocusTarget) && this._.origFocusTarget.focus();
+            this._.origFocusTarget = null;
         },
 
         _lockScrolling: function () {
