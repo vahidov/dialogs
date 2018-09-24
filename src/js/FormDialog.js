@@ -34,7 +34,7 @@ _context.invoke('Nittro.Extras.Dialogs', function(Dialog, DOM, Arrays) {
             this._.form = form;
 
             if (form && this._.tabContext) {
-                this._.tabContext.addFromContainer(form.getElement(), false, 0);
+                this._.tabContext.clear().addFromContainer(form.getElement(), false, 0);
             }
 
             return this;
@@ -46,7 +46,7 @@ _context.invoke('Nittro.Extras.Dialogs', function(Dialog, DOM, Arrays) {
         },
 
         reset: function() {
-            this._.form.reset();
+            this._.form && this._.form.reset();
             return this;
         },
 
@@ -62,10 +62,11 @@ _context.invoke('Nittro.Extras.Dialogs', function(Dialog, DOM, Arrays) {
         },
 
         _autoFocus: function () {
-            try {
-                this._.form.getElements().item(0).focus();
-
-            } catch (e) { /* noop */ }
+            if (this._.form) {
+                try {
+                    this._.form.getElements().item(0).focus();
+                } catch (e) { /* noop */ }
+            }
         }
     });
 

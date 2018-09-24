@@ -1,48 +1,125 @@
-_context.invoke('Nittro.Extras.Dialogs.Bridges.DialogsPage', function (DOM, Url, undefined) {
+_context.invoke('Nittro.Extras.Dialogs.Bridges.DialogsPage', function (DOM, Url, Arrays, undefined) {
 
-    var DialogAgent = _context.extend('Nittro.Object', function (dialogManager, snippetManager) {
+    var anonId = 0;
+
+    var DialogAgent = _context.extend('Nittro.Object', function (page, dialogManager, snippetManager, options) {
         DialogAgent.Super.call(this);
+        this._.page = page;
         this._.dialogManager = dialogManager;
         this._.snippetManager = snippetManager;
         this._.formLocator = null;
-        this._.anonId = 0;
+        this._.options = Arrays.mergeTree({}, DialogAgent.defaults, options);
+
+        this._.page.on('before-transaction', this._setupTransactionContext.bind(this));
+        this._.page.on('transaction-created', this._initTransaction.bind(this));
     }, {
+        STATIC: {
+            defaults: {
+                whitelistHistory: true,
+                disableDefaultTransitions: true,
+                disableDefaultScroll: true
+            }
+        },
+
         setFormLocator: function (formLocator) {
             this._.formLocator = formLocator;
             return this;
         },
 
-        tryIFrameTransaction: function (evt) {
+        _setupTransactionContext: function (evt) {
             if (evt.isDefaultPrevented()) {
                 return;
             }
 
-            var elem = evt.data.context.element,
-                def = elem ? DOM.getData(elem, 'dialog') : null;
+            var ctx = evt.data.context,
+                def = ctx.element ? DOM.getData(ctx.element, 'dialog', null) : null,
+                current = this._.dialogManager.getTopmostOpenDialog(),
+                dialogs = {},
+                active, iframe, name;
 
-            if (typeof def === 'string') {
-                if (/^iframe\s+[^:]+$/.test(def)) {
-                    def = {
-                        name: def.replace(/^iframe\s+/, ''),
-                        type: 'iframe'
-                    };
-                } else {
-                    return;
+            if (def !== null) {
+                this._mergeDefinitions(dialogs, def);
+            }
+
+            if (ctx.dialogs) {
+                this._mergeDefinitions(dialogs, ctx.dialogs);
+            }
+
+            for (name in dialogs) if (dialogs.hasOwnProperty(name)) {
+                def = dialogs[name];
+
+                if (name === 'current' || name === 'self') {
+                    delete dialogs[name];
+
+                    if (current && (name === 'current' || ctx.element && DOM.contains(current.getContent(), ctx.element))) {
+                        name = current.getName();
+                        dialogs[name] = def;
+
+                        if (typeof def === 'object') {
+                            def.name = name;
+                        }
+                    } else {
+                        continue;
+                    }
                 }
-            } else if (!def || def.type !== 'iframe') {
-                return;
+
+                if (typeof def === 'object') {
+                    active = true;
+
+                    if (def.type === 'iframe') {
+                        iframe = name;
+                    }
+                }
             }
 
-            evt.preventDefault();
-            evt.data.context.event && evt.data.context.event.preventDefault();
-
-            if (!('source' in def)) {
-                def.source = evt.data.url;
+            if (current) {
+                if (!(current.getName() in dialogs)) {
+                    dialogs[current.getName()] = false;
+                } else if (dialogs[current.getName()] === true) {
+                    delete dialogs[current.getName()];
+                }
             }
 
+            ctx.dialogs = dialogs;
+
+            if (active) {
+                if (this._.options.whitelistHistory && !('history' in ctx) && (!ctx.element || !ctx.element.hasAttribute('data-history'))) {
+                    ctx.history = false;
+                }
+
+                if (this._.options.disableDefaultTransitions && !('transition' in ctx) && (!ctx.element || !ctx.element.hasAttribute('data-transition'))) {
+                    ctx.transition = false;
+                }
+
+                if (this._.options.disableDefaultScroll && !('scrollTo' in ctx) && (!ctx.element || !ctx.element.hasAttribute('data-scroll-to'))) {
+                    ctx.scrollTo = false;
+                }
+            }
+
+            if (iframe) {
+                evt.preventDefault();
+                ctx.event && ctx.event.preventDefault();
+                def = dialogs[iframe];
+                def.source || def.source === '' || (def.source = evt.data.url);
+                this._openIframeDialog(def, ctx.element);
+            }
+        },
+
+        _initTransaction: function (evt) {
+            var data = {
+                pending: [],
+                dialogs: evt.data.context.dialogs
+            };
+
+            evt.data.transaction.on('dispatch', this._dispatch.bind(this, data));
+            evt.data.transaction.on('ajax-response', this._handleResponse.bind(this, data));
+            evt.data.transaction.on('snippets-apply', this._handleSnippets.bind(this, data));
+        },
+
+        _openIframeDialog: function (def, elem) {
             var dlg = this._createDialog(def.name, def);
 
-            if (this._.formLocator && elem instanceof HTMLFormElement) {
+            if (elem && this._.formLocator && elem instanceof HTMLFormElement) {
                 var frm = this._.formLocator.getForm(elem),
                     external = true,
                     tmp;
@@ -70,46 +147,10 @@ _context.invoke('Nittro.Extras.Dialogs.Bridges.DialogsPage', function (DOM, Url,
             dlg.show();
         },
 
-        initTransaction: function (transaction, context) {
-            var data = {
-                    pending: [],
-                    dialogs: {}
-                },
-                current = this._.dialogManager.getTopmostOpenDialog(),
-                def,
-                name;
-
-            if (context.dialogs) {
-                for (name in context.dialogs) if (context.dialogs.hasOwnProperty(name)) {
-                    this._mergeDefinition(data, context.dialogs[name], current, context.element, name);
-                }
-            } else {
-                if (current) {
-                    data.dialogs[current.getName()] = false;
-                }
-
-                if (context.element && (def = DOM.getData(context.element, 'dialog')) !== undefined) {
-                    this._mergeDefinition(data, def, current, context.element);
-                }
-
-                if (current && current.__keep) {
-                    if (data.dialogs[current.getName()] === false) {
-                        delete data.dialogs[current.getName()];
-                    }
-
-                    delete current.__keep;
-                }
-            }
-
-            transaction.on('dispatch', this._dispatch.bind(this, data));
-            transaction.on('ajax-response', this._handleResponse.bind(this, data));
-            transaction.on('snippets-apply', this._handleSnippets.bind(this, data));
-        },
-
         _dispatch: function (data, evt) {
             var name, promise;
 
-            for (name in data.dialogs) if (data.dialogs.hasOwnProperty(name) && data.dialogs[name] !== null) {
+            for (name in data.dialogs) if (data.dialogs.hasOwnProperty(name)) {
                 if (promise = this._processDialog(name, data.dialogs[name], data, evt.target)) {
                     evt.waitFor(promise);
                 }
@@ -118,21 +159,13 @@ _context.invoke('Nittro.Extras.Dialogs.Bridges.DialogsPage', function (DOM, Url,
 
         _handleResponse: function (data, evt) {
             var payload = evt.data.response.getPayload(),
-                current = this._.dialogManager.getTopmostOpenDialog(),
-                name, def;
+                merged, i, n;
 
             if ('dialogs' in payload) {
-                for (name in payload.dialogs) if (payload.dialogs.hasOwnProperty(name)) {
-                    def = payload.dialogs[name];
+                merged = this._mergeDefinitions(data.dialogs, payload.dialogs);
 
-                    if (typeof def === 'string') {
-                        def = this._parseDescriptor(def, current, null, name);
-                    }
-
-                    if (def !== null && !def !== !data.dialogs[name]) {
-                        data.dialogs[name] = def;
-                        this._processDialog(name, def, data, evt.target);
-                    }
+                for (i = 0, n = merged.length; i < n; i++) {
+                    this._processDialog(merged[i], data.dialogs[merged[i]], data, evt.target);
                 }
             }
         },
@@ -176,7 +209,7 @@ _context.invoke('Nittro.Extras.Dialogs.Bridges.DialogsPage', function (DOM, Url,
                         evt.target.then(dlg.show.bind(dlg));
                     }
                 } else {
-                    dlg && evt.waitFor(dlg.hide());
+                    dlg && evt.waitFor(dlg.destroy());
                 }
             }
         },
@@ -185,31 +218,56 @@ _context.invoke('Nittro.Extras.Dialogs.Bridges.DialogsPage', function (DOM, Url,
             return !def.type || def.type === 'form';
         },
 
-        _mergeDefinition: function (data, def, current, elem, name) {
-            if (typeof def === 'string') {
-                def = this._parseDescriptor(def, current, elem, name);
-            } else if (typeof def !== 'object' || !def.name || !def.source) {
-                throw new Error('Invalid dialog definition: must be an object with the keys "name" and "source" and optionally "type" and / or "options"');
+        _mergeDefinitions: function (dialogs, defs) {
+            var merged = [],
+                name, m, def;
+
+            if (typeof defs === 'string') {
+                defs = { '': defs };
+            } else if ('source' in defs || 'type' in defs) {
+                defs = { '': defs };
             }
 
-            if (def) {
-                data.dialogs[def.name] = def;
-            }
-        },
+            for (name in defs) if (defs.hasOwnProperty(name)) {
+                def = defs[name];
 
-        _parseDescriptor: function (descriptor, current, element, name) {
-            var m = /^keep-current(?:;\s*|$)/.exec(descriptor);
+                if (typeof def === 'string') {
+                    m = /^keep-current(?:;\s*|$)/.exec(def);
 
-            if (m) {
-                descriptor = descriptor.substr(m[0].length);
-                current && (current.__keep = true);
+                    if (m) {
+                        def = def.substr(m[0].length);
+                        dialogs.current = true;
+                    }
 
-                if (!descriptor) {
-                    return null;
+                    if (!def) {
+                        continue;
+                    }
+
+                    def = this._parseDescriptor(def);
+                }
+
+                if (typeof def === 'object') {
+                    if (!def.name && name) {
+                        def.name = name;
+                    }
+
+                    if (!def.name || !def.source) {
+                        throw new Error('Invalid dialog definition: must be an object with the keys "name" and "source" and optionally "type" and / or "options"');
+                    }
+
+                    dialogs[def.name] = def;
+                    merged.push(def.name);
+                } else if (name) {
+                    dialogs[name] = def;
+                    merged.push(name);
                 }
             }
 
-            m = /^(?:(self|current)|(?:(form|iframe)(?=[\s:]))?\s*([^:]+?)?)\s*:\s*(.+)$/.exec(descriptor);
+            return merged;
+        },
+
+        _parseDescriptor: function (descriptor) {
+            var m = /^(?:(self|current)|(?:(form|iframe)(?=[\s:]))?\s*([^:]+?)?)\s*:\s*(.+)$/.exec(descriptor);
 
             if (!m) {
                 window.console && console.warn(
@@ -218,25 +276,17 @@ _context.invoke('Nittro.Extras.Dialogs.Bridges.DialogsPage', function (DOM, Url,
                 );
 
                 return {
-                    name: 'dlg-anonymous' + (++this._.anonId),
+                    name: 'dlg-anonymous-' + (++anonId),
                     source: descriptor
                 };
             } else if (m[1]) {
-                if (current && (m[1] === 'current' || element && DOM.contains(current.getContent(), element))) {
-                    return {
-                        name: current.getName(),
-                        source: m[4]
-                    };
-                } else {
-                    return null;
-                }
-            } else {
-                if (!m[3] && !name) {
-                    throw new Error('Missing dialog name in definition "' + descriptor + '"');
-                }
-
                 return {
-                    name: m[3] || name,
+                    name: m[1],
+                    source: m[4]
+                };
+            } else {
+                return {
+                    name: m[3],
                     type: m[2] || null,
                     source: m[4]
                 };
@@ -249,7 +299,7 @@ _context.invoke('Nittro.Extras.Dialogs.Bridges.DialogsPage', function (DOM, Url,
 
             if (!def) {
                 if (dlg) {
-                    promise = dlg.hide();
+                    promise = dlg.destroy();
                 }
             } else {
                 if (!dlg) {
@@ -286,22 +336,20 @@ _context.invoke('Nittro.Extras.Dialogs.Bridges.DialogsPage', function (DOM, Url,
                 dlg = this._.dialogManager.createDialog(name, def.options);
             }
 
-            dlg.on('hidden', this._cleanupDialog.bind(this, this._isSnippetType(def)));
+            if (this._isSnippetType(def)) {
+                dlg.on('destroyed', this._cleanupDialog.bind(this));
+            }
 
             return dlg;
         },
 
         _injectForm: function (dlg) {
             var frm = dlg.getContent().getElementsByTagName('form').item(0);
-            frm && dlg.setForm(this._.formLocator.getForm(frm));
+            dlg.setForm(frm ? this._.formLocator.getForm(frm) : null);
         },
 
-        _cleanupDialog: function (descendants, evt) {
-            if (descendants) {
-                this._.snippetManager.cleanupDescendants(evt.target.getElement());
-            }
-
-            evt.target.destroy();
+        _cleanupDialog: function (evt) {
+            this._.snippetManager.cleanupDescendants(evt.target.getElement());
         }
     });
 
@@ -309,5 +357,6 @@ _context.invoke('Nittro.Extras.Dialogs.Bridges.DialogsPage', function (DOM, Url,
 
 }, {
     DOM: 'Utils.DOM',
-    Url: 'Utils.Url'
+    Url: 'Utils.Url',
+    Arrays: 'Utils.Arrays'
 });

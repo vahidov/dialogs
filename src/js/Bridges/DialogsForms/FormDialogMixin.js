@@ -13,7 +13,7 @@ _context.invoke('Nittro.Extras.Dialogs.Bridges.DialogsForms', function (Manager,
             dlg.on('destroyed', this._removeDialogForm.bind(this));
 
             var frm = dlg.getContent().getElementsByTagName('form').item(0);
-            frm && dlg.setForm(this._.formLocator.getForm(frm));
+            dlg.setForm(frm ? this._.formLocator.getForm(frm) : null);
 
             return dlg;
         },

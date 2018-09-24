@@ -5,7 +5,9 @@ _context.invoke('Nittro.Extras.Dialogs.Bridges.DialogsDI', function() {
     }, {
         STATIC: {
             defaults: {
-                baseZ: 1000
+                baseZ: 1000,
+                whitelistHistory: true,
+                disableDefaultTransitions: true
             }
         },
 
@@ -26,6 +28,7 @@ _context.invoke('Nittro.Extras.Dialogs.Bridges.DialogsDI', function() {
 
         setup: function() {
             var builder = this._getContainerBuilder(),
+                config = this._getConfig(),
                 def = builder.getServiceDefinition('dialogManager');
 
             if (builder.hasServiceDefinition('formLocator')) {
@@ -38,23 +41,21 @@ _context.invoke('Nittro.Extras.Dialogs.Bridges.DialogsDI', function() {
             }
 
             if (builder.hasServiceDefinition('page')) {
-                builder.addServiceDefinition('dialogAgent', 'Nittro.Extras.Dialogs.Bridges.DialogsPage.DialogAgent()');
+                builder.addServiceDefinition('dialogAgent', {
+                    factory: 'Nittro.Extras.Dialogs.Bridges.DialogsPage.DialogAgent()',
+                    args: {
+                        options: {
+                            whitelistHistory: config.whitelistHistory,
+                            disableDefaultTransitions: config.disableDefaultTransitions
+                        }
+                    },
+                    run: true
+                });
 
                 if (builder.hasServiceDefinition('formLocator')) {
                     builder.getServiceDefinition('dialogAgent')
                         .addSetup('::setFormLocator()');
                 }
-
-                builder.getServiceDefinition('page')
-                    .addSetup(function (dialogAgent) {
-                        this.on('before-transaction', function (evt) {
-                            dialogAgent.tryIFrameTransaction(evt);
-                        });
-
-                        this.on('transaction-created', function (evt) {
-                            dialogAgent.initTransaction(evt.data.transaction, evt.data.context);
-                        });
-                    });
             }
         }
     });

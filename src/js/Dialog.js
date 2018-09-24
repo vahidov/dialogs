@@ -225,9 +225,9 @@ _context.invoke('Nittro.Extras.Dialogs', function(DOM, CSSTransitions, Arrays, R
             this.trigger('destroy');
 
             if (this._.state.current !== 'hidden') {
-                this.hide().then(this._doDestroy.bind(this));
+                return this.hide().then(this._doDestroy.bind(this));
             } else {
-                this._doDestroy();
+                return this._doDestroy();
             }
         },
 
@@ -249,6 +249,8 @@ _context.invoke('Nittro.Extras.Dialogs', function(DOM, CSSTransitions, Arrays, R
             for (var k in this._.elms) if (this._.elms.hasOwnProperty(k)) {
                 this._.elms[k] = null;
             }
+
+            return Promise.resolve(null);
         },
 
         _setState: function (state, init, cancel) {
