@@ -174,7 +174,7 @@ _context.invoke('Nittro.Extras.Dialogs.Bridges.DialogsPage', function (DOM, Url,
             var changeset = evt.data.changeset;
 
             evt.waitFor(Promise.all(data.pending));
-            data.pending = null;
+            data.pending = [];
 
             var name, def, id, dlg, snippet, content;
 
