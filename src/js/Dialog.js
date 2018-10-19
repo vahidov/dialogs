@@ -218,7 +218,7 @@ _context.invoke('Nittro.Extras.Dialogs', function(DOM, CSSTransitions, Arrays, R
 
         destroy: function () {
             if (this._.state.destroying) {
-                return;
+                return this._.state.promise || Promise.resolve(null);
             }
 
             this._.state.destroying = true;

@@ -336,6 +336,8 @@ _context.invoke('Nittro.Extras.Dialogs.Bridges.DialogsPage', function (DOM, Url,
                 dlg = this._.dialogManager.createDialog(name, def.options);
             }
 
+            dlg.one('hidden', dlg.destroy.bind(dlg));
+
             if (this._isSnippetType(def)) {
                 dlg.on('destroyed', this._cleanupDialog.bind(this));
             }
