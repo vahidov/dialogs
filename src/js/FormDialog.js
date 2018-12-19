@@ -12,7 +12,7 @@ _context.invoke('Nittro.Extras.Dialogs', function(Dialog, DOM, Arrays) {
         }
 
         if (this._.options.resetOnHide) {
-            this.on('hidden', this.reset.bind(this));
+            this.on('hidden', this._autoReset.bind(this));
         }
 
         if (form) {
@@ -64,8 +64,19 @@ _context.invoke('Nittro.Extras.Dialogs', function(Dialog, DOM, Arrays) {
         _autoFocus: function () {
             if (this._.form) {
                 try {
-                    this._.form.getElements().item(0).focus();
+                    for (var elems = this._.form.getElements(), i = 0, n = elems.length; i < n; i++) {
+                        if (!/^(?:button|submit|reset|hidden)$/i.test(elems.item(i).type || '') && elems.item(i).tabIndex >= 0) {
+                            elems.item(i).focus();
+                            break;
+                        }
+                    }
                 } catch (e) { /* noop */ }
+            }
+        },
+
+        _autoReset: function () {
+            if (this._.form && this._.form.getElement() && DOM.getData(this._.form.getElement(), 'reset', true)) {
+                this.reset();
             }
         }
     });

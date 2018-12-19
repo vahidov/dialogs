@@ -19,8 +19,15 @@ _context.invoke('Nittro.Extras.Dialogs.Bridges.DialogsForms', function (Manager,
         },
 
         _removeDialogForm: function (evt) {
-            this._.formLocator.removeForm(evt.target.getForm().getElement());
-            evt.target.setForm(null);
+            var form = evt.target.getForm();
+
+            if (form) {
+                if (form.getElement()) {
+                    this._.formLocator.removeForm(form.getElement());
+                }
+
+                evt.target.setForm(null);
+            }
         }
     };
 
