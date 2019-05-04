@@ -251,7 +251,7 @@ _context.invoke('Nittro.Extras.Dialogs.Bridges.DialogsPage', function (DOM, Url,
                         def.name = name;
                     }
 
-                    if (!def.name || !def.source) {
+                    if (!def.name || !def.source && def.type !== 'iframe') {
                         throw new Error('Invalid dialog definition: must be an object with the keys "name" and "source" and optionally "type" and / or "options"');
                     }
 
